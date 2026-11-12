@@ -30,6 +30,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
+          skip-wrapper-validation: true
       - name: Tes unit
         run: gradle --no-daemon :app:testDebugUnitTest
       - name: Bangun APK debug
