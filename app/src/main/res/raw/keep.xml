@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Logo konektor dimuat lewat getIdentifier (ProviderLogos.kt); jangan dibuang oleh shrinkResources. -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@drawable/ic_connector_*" />
