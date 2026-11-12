@@ -1,0 +1,8 @@
+# Memperbarui versi action CI. Saat ini action masih memakai tag; jalankan `bash scripts/pin-actions.sh` (butuh jaringan) untuk memin ke SHA,
+# setelah itu Dependabot memperbarui SHA beserta komentar versinya. Periksa status pin: `bash scripts/pin-actions.sh --check`.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"

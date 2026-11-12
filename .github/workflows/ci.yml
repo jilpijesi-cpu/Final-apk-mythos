@@ -1,0 +1,102 @@
+# CI untuk Mythos sendiri (bukan untuk proyek yang dibuat agen). Menangkap galat kompilasi dan tes yang gagal sebelum sampai ke perangkat.
+name: CI
+
+on:
+  push:
+    # Sengaja hanya cabang utama: cabang mythos/** didorong oleh alat GithubBuild milik aplikasi ini bila repo yang sama dipakai
+    # sebagai target build, dan tidak boleh memicu CI proyek ini.
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      # Memastikan gradle-wrapper.jar di repo adalah rilis resmi Gradle (bukan JAR yang diubah).
+      - uses: gradle/actions/wrapper-validation@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # Gradle dipasang oleh action ini lalu dipanggil sebagai `gradle` (bukan lewat gradlew).
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Tes unit
+        run: gradle --no-daemon :app:testDebugUnitTest
+
+      # Belum memblokir: lint belum pernah dijalankan pada kode ini. Jadikan memblokir (hapus continue-on-error) setelah bersih.
+      - name: Lint
+        continue-on-error: true
+        run: gradle --no-daemon :app:lintDebug
+
+      - name: Bangun APK debug
+        run: gradle --no-daemon :app:assembleDebug
+
+      # Menangkap kesalahan R8/shrinker yang tidak muncul di build debug. APK release tidak ditandatangani, jadi tidak diunggah.
+      # Hanya mengompilasi tes instrumented (tidak menjalankannya: butuh emulator). Menangkap galat kompilasi di folder androidTest.
+      - name: Kompilasi tes instrumented
+        run: gradle --no-daemon :app:assembleDebugAndroidTest
+
+      - name: Bangun APK release (cek R8)
+        run: gradle --no-daemon :app:assembleRelease
+
+      # Peta nama R8: perlu untuk membaca stack trace crash dari APK release.
+      - name: Unggah peta R8
+        uses: actions/upload-artifact@v4
+        with:
+          name: mapping-r8
+          path: app/build/outputs/mapping/release/mapping.txt
+          if-no-files-found: ignore
+          retention-days: 90
+
+      - name: Unggah laporan tes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: laporan-tes
+          path: app/build/reports/tests/
+          if-no-files-found: ignore
+
+      - name: Unggah laporan lint
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: laporan-lint
+          path: app/build/reports/lint-results-debug.*
+          if-no-files-found: ignore
+
+      - name: Unggah APK debug
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mythos-v83-patch13-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 14
+
+  # Menguji skrip pengisian form (mythos_form.js) di Chromium sungguhan, terpisah dari build Android.
+  form-js:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Pasang Playwright
+        run: npm install --no-save playwright@1.49.1 && npx playwright install --with-deps chromium
+      - name: Tes mythos_form.js
+        run: node jstest/form.test.js
