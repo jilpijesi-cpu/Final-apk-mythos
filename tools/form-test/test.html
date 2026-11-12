@@ -1,0 +1,17 @@
+<!doctype html><html><body>
+<label for="nama">Nama Lengkap</label><input id="nama" name="n">
+<div class="form-group"><span>Usulan Penyelesaian</span><textarea id="u"></textarea></div>
+<label for="jenis">Jenis Pengaduan</label><select id="jenis"><option value="">-- pilih --</option><option value="1">Kredit</option><option value="2">Asuransi</option></select>
+<label><input type="checkbox" id="setuju"> Saya menyetujui syarat dan ketentuan</label>
+<fieldset><legend>Status Pengadu</legend><label><input type="radio" name="s" value="a"> Perorangan</label><label><input type="radio" name="s" value="b"> Badan Hukum</label></fieldset>
+<label for="tgl">Tanggal Kejadian</label><input id="tgl" type="date">
+<label for="tgl2">Tanggal Surat</label><input id="tgl2" type="text" placeholder="dd/mm/yyyy">
+<div id="rt" contenteditable="true" aria-label="Uraian Kronologi" style="min-height:20px"></div>
+<div role="combobox" aria-label="Provinsi" aria-haspopup="listbox" onclick="document.getElementById('lb').style.display='block'">pilih</div>
+<ul id="lb" role="listbox" style="display:none"><li role="option" onclick="this.parentElement.dataset.v=this.innerText">DKI Jakarta</li><li role="option" onclick="this.parentElement.dataset.v=this.innerText">Jawa Barat</li></ul>
+<div>Isi Dokumen<iframe id="fr" srcdoc="<body contenteditable=true></body>"></iframe></div>
+</body></html>
+<button id="b1" onclick="window.__c=(window.__c||0)+1">Kirim Tanggapan</button>
+<form onsubmit="window.__s=(window.__s||0)+1;return false"><button id="w1">Lanjut</button></form>
+<div><button id="d1" onclick="window.__d1=1">Cetak</button><button id="d2" onclick="window.__d2=1">Cetak</button></div>
+<button id="n1" type="button">Lanjut Aman</button>
