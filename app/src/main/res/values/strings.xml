@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Cuaca &amp; Sholat</string>
+    <string name="nav_weather">Cuaca</string>
+    <string name="nav_prayer">Jadwal Sholat</string>
+    <string name="nav_qibla">Arah Kiblat</string>
+    <string name="nav_settings">Pengaturan</string>
+    <string name="city_placeholder">Jakarta, Indonesia</string>
+    <string name="btn_check">Cek Jadwal &amp; Cuaca</string>
+</resources>
