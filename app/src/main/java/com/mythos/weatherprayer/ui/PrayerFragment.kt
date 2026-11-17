@@ -21,7 +21,7 @@ class PrayerFragment : Fragment() {
         Pair("Ashar", "15:15"),
         Pair("Maghrib", "17:50"),
         Pair("Isya'", "19:05")
-    }
+    )
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentPrayerBinding.inflate(inflater, container, false)
