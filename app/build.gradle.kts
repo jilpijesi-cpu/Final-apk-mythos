@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.build.mythos"
+    namespace = "com.bca.mybca.omni.android"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.build.mythos"
+        applicationId = "com.bca.mybca.omni.android"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
