@@ -1,0 +1,168 @@
+# Dipicu oleh tool build_apk di aplikasi (git push). Artifact 'mythos-debug' diunduh balik oleh skrip tools/build-github.sh.
+name: Build APK
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+# Run lama hanya dibatalkan untuk pull request. Untuk push TIDAK: tool build_apk menunggu run milik commit-nya sendiri,
+# dan pembatalan oleh push berikutnya akan tampak sebagai build gagal.
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Token bawaan hanya boleh membaca isi repo (rahasia keystore tetap dipakai lewat secrets).
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      # Pastikan gradle-wrapper.jar cocok dengan checksum resmi Gradle (F-08). Pin action memakai SHA commit penuh, bukan tag.
+      - name: Validasi Gradle Wrapper
+        uses: gradle/actions/wrapper-validation@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
+
+      - name: Siapkan JDK 17
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Siapkan Android SDK
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3.2.2
+        with:
+          packages: 'platforms;android-34 build-tools;34.0.0 platform-tools'
+
+      - name: Siapkan Gradle 8.9
+        uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
+        with:
+          gradle-version: '8.9'
+
+      # APK debug wajib memakai signing key yang konsisten agar dapat memperbarui aplikasi yang terpasang.
+      # Mendukung keystore bawaan (androiddebugkey) maupun keystore kustom hasil tools/buat-keystore.sh (alias 'kita').
+      - name: Siapkan dan verifikasi keystore MYTHOS
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS_SECRET: ${{ secrets.KEY_ALIAS }}
+          EXPECTED_SHA256_SECRET: ${{ secrets.KEYSTORE_SHA256 }}
+        run: |
+          set -euo pipefail
+          if [ -z "${KEYSTORE_B64:-}" ] || [ -z "${KEYSTORE_PASSWORD:-}" ]; then
+            echo "::error::GitHub Secrets KEYSTORE_B64 dan/atau KEYSTORE_PASSWORD belum tersedia."
+            exit 1
+          fi
+
+          KEYSTORE_FILE="signing-key.p12"
+          DEFAULT_SHA256="6D:7C:50:0F:41:CE:A2:E2:F7:02:35:7E:B8:47:88:DD:49:4E:06:F5:F1:2A:A3:4B:E7:B3:D2:CA:C1:13:F1:FF"
+
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$KEYSTORE_FILE"
+          test -s "$KEYSTORE_FILE"
+          chmod 600 "$KEYSTORE_FILE"
+
+          if [ -n "${KEY_ALIAS_SECRET:-}" ]; then
+            KEY_ALIAS="$KEY_ALIAS_SECRET"
+          elif keytool -list -keystore "$KEYSTORE_FILE" -storepass "$KEYSTORE_PASSWORD" -alias "androiddebugkey" >/dev/null 2>&1; then
+            KEY_ALIAS="androiddebugkey"
+          elif keytool -list -keystore "$KEYSTORE_FILE" -storepass "$KEYSTORE_PASSWORD" -alias "kita" >/dev/null 2>&1; then
+            KEY_ALIAS="kita"
+          else
+            KEY_ALIAS="androiddebugkey"
+          fi
+
+          ACTUAL_SHA256="$(keytool -list -v -keystore "$KEYSTORE_FILE" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" 2>/dev/null | awk -F': ' '/SHA256:/{print $2; exit}')"
+          if [ -z "$ACTUAL_SHA256" ]; then
+            echo "::error::Tidak dapat membaca sertifikat untuk alias '$KEY_ALIAS' dari keystore."
+            exit 1
+          fi
+
+          if [ -n "${EXPECTED_SHA256_SECRET:-}" ]; then
+            if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256_SECRET" ]; then
+              echo "::error::Fingerprint keystore tidak cocok dengan secret KEYSTORE_SHA256."
+              exit 1
+            fi
+          elif [ "$KEY_ALIAS" = "androiddebugkey" ] && [ "$ACTUAL_SHA256" != "$DEFAULT_SHA256" ]; then
+            echo "::error::Fingerprint keystore tidak cocok dengan APK MYTHOS 2.40."
+            exit 1
+          fi
+
+          # Uji akses private key; password key sudah diverifikasi sama dengan store password.
+          keytool -certreq -alias "$KEY_ALIAS" -keystore "$KEYSTORE_FILE" -storepass "$KEYSTORE_PASSWORD" -keypass "$KEYSTORE_PASSWORD" -file /dev/null >/dev/null 2>&1
+
+          printf 'storeFile=%s\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' "$KEYSTORE_FILE" "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEYSTORE_PASSWORD" > keystore.properties
+          chmod 600 keystore.properties
+          echo "Keystore valid (alias: $KEY_ALIAS)."
+
+      # Penjaga rahasia source bundle (F-03), bagian 1: berkas dengan ISI mirip token HARUS menggagalkan packSource.
+      # Token palsu dirakit saat jalan agar teksnya tidak ada di repo.
+      - name: Uji penjaga rahasia, isi mirip token menggagalkan packSource
+        run: |
+          set -uo pipefail
+          printf 'catatan=ghp_%s\n' "$(printf 'A%.0s' $(seq 1 36))" > fixture-catatan.txt
+          if ./gradlew :app:packSource --no-daemon > /tmp/pack-fixture.log 2>&1; then
+            echo "::error::packSource TIDAK gagal padahal ada isi mirip token."; rm -f fixture-catatan.txt; exit 1
+          fi
+          rm -f fixture-catatan.txt
+          grep -q 'Penjaga rahasia' /tmp/pack-fixture.log || { echo "::error::packSource gagal, tetapi bukan oleh penjaga rahasia:"; tail -n 30 /tmp/pack-fixture.log; exit 1; }
+          echo "Penjaga isi rahasia bekerja."
+
+      # Bagian 2: berkas bernama rahasia (fixture palsu) ada di root saat build; APK TIDAK boleh membawanya.
+      - name: Taruh fixture berkas rahasia palsu
+        run: |
+          set -euo pipefail
+          mkdir -p .ssh
+          for f in .env fixture-signing.p12 id_rsa service-account.json deploy.pem .ssh/config; do
+            printf 'MYTHOS_FIXTURE_%s\n' NAME_ONLY > "$f"
+          done
+
+      # APK dibangun dan diunggah DULU supaya hasilnya tetap ada walau ada tes yang gagal; tes dijalankan sesudahnya
+      # dan kegagalannya tetap membuat job merah. Skrip build_apk membaca status langkah tes ("KITA_TESTS") dan TIDAK
+      # menandai APK siap bila workflow tidak sukses.
+      - name: Build APK debug
+        run: ./gradlew assembleDebug --no-daemon
+
+      # Penjaga: APK wajib membawa source dirinya (assets/mythos-source.zip). Tanpa ini agen akan mengaudit source lama.
+      - name: Pastikan APK membawa source
+        run: |
+          set -euo pipefail
+          APK="$(ls app/build/outputs/apk/debug/*.apk | head -1)"
+          unzip -l "$APK" | grep -q 'assets/mythos-source.zip' || { echo "::error::APK tidak membawa assets/mythos-source.zip (cek tugas packSource di app/build.gradle.kts)."; exit 1; }
+          unzip -l "$APK" | grep 'assets/mythos-source.zip'
+          # Pastikan source bundle di dalam APK tidak membawa fixture rahasia maupun berkas/isi mirip rahasia lain.
+          bash tools/cek-source-bundle.sh "$APK"
+
+      - name: Unggah APK
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: mythos-debug
+          path: app/build/outputs/apk/debug/*.apk
+
+      - name: Jalankan tes unit
+        run: ./gradlew testDebugUnitTest --no-daemon
+
+      # Laporan tes selalu diunggah (juga saat gagal) agar penyebab bisa dibaca tanpa mengulang build.
+      - name: Unggah laporan tes
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: laporan-tes-unit
+          path: app/build/reports/tests/testDebugUnitTest/
+          if-no-files-found: ignore
+
+      # Lint tidak menggagalkan job (belum ada baseline); hasilnya dipakai untuk membersihkan temuan bertahap.
+      - name: Jalankan lint
+        continue-on-error: true
+        run: ./gradlew lintDebug --no-daemon
+
+      - name: Unggah laporan lint
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: laporan-lint
+          path: app/build/reports/lint-results-debug.html
+          if-no-files-found: ignore
