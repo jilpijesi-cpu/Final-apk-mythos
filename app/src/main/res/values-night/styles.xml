@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Build" parent="android:Theme.Material.NoActionBar">
+        <item name="android:colorPrimary">@color/build_brand</item>
+        <item name="android:colorAccent">@color/build_brand</item>
+        <item name="android:colorControlActivated">@color/build_brand</item>
+        <item name="android:textColorPrimary">@color/build_text</item>
+        <item name="android:windowBackground">@color/build_bg</item>
+        <item name="android:alertDialogTheme">@style/Theme.Build.Dialog</item>
+    </style>
+
+    <style name="Theme.Build.Dialog" parent="android:Theme.Material.Dialog.Alert">
+        <item name="android:colorAccent">@color/build_brand</item>
+        <item name="android:colorPrimary">@color/build_brand</item>
+        <item name="android:colorControlActivated">@color/build_brand</item>
+        <item name="android:textColorPrimary">@color/build_text</item>
+        <item name="android:buttonBarButtonStyle">@style/Build.DialogButton</item>
+        <item name="android:windowBackground">@drawable/dialog_bg</item>
+    </style>
+</resources>
