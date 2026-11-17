@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="24dp"
-    android:gravity="center_horizontal">
+    android:gravity="center">
 
     <TextView
         android:layout_width="wrap_content"
@@ -15,24 +15,25 @@
         android:layout_marginBottom="16dp" />
 
     <TextView
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Saya adalah Mythos, agen koding interaktif Anda yang siap membantu membangun aplikasi dan menyelesaikan tugas rekayasa perangkat lunak."
-        android:textSize="16sp"
-        android:gravity="center"
-        android:layout_marginBottom="24dp" />
+        android:text="Aplikasi peraga kemampuan Android &amp; AI"
+        android:textSize="14sp"
+        android:layout_marginBottom="32dp"
+        android:gravity="center" />
 
     <Button
-        android:id="idBtnAction"
+        android:id="@+id/btnAction"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Tampilkan Kemampuan" />
+        android:text="Jalankan Aksi"
+        android:layout_marginBottom="16dp" />
 
     <TextView
-        android:id="idTvResult"
+        android:id="@+id/tvResult"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
+        android:text="Hasil akan muncul di sini"
         android:textSize="16sp"
         android:gravity="center" />
 
