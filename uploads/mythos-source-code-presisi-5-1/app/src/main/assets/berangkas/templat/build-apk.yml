@@ -1,0 +1,92 @@
+# Dipicu oleh tool build_apk di aplikasi (git push). Artifact 'mythos-debug' diunduh balik oleh skrip tools/build-github.sh.
+name: Build APK
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+# Run lama hanya dibatalkan untuk pull request. Untuk push TIDAK: tool build_apk menunggu run milik commit-nya sendiri,
+# dan pembatalan oleh push berikutnya akan tampak sebagai build gagal.
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Token bawaan hanya boleh membaca isi repo (rahasia keystore tetap dipakai lewat secrets).
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Siapkan JDK 17
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Siapkan Android SDK
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3.2.2
+        with:
+          packages: 'platforms;android-34 build-tools;34.0.0 platform-tools'
+
+      - name: Siapkan Gradle 8.9
+        uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
+        with:
+          gradle-version: '8.9'
+
+      # Identitas penandatangan: bila rahasia ada, build ditandatangani keystore yang sama dengan di HP,
+      # sehingga APK dari sini bisa menimpa APK dari Termux (dan sebaliknya).
+      - name: Siapkan keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ] && [ -n "$KEYSTORE_PASSWORD" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > kita.jks
+            printf 'storeFile=kita.jks\nstorePassword=%s\nkeyAlias=kita\nkeyPassword=%s\n' "$KEYSTORE_PASSWORD" "$KEYSTORE_PASSWORD" > keystore.properties
+            echo "Keystore dipasang."
+          else
+            echo "Rahasia keystore tidak ada: APK memakai kunci debug bawaan (tidak bisa menimpa APK dari HP)."
+            echo "GRADLE_EXTRA=-PallowUnsigned=true" >> "$GITHUB_ENV"
+          fi
+
+      # APK dibangun dan diunggah DULU supaya hasilnya tetap ada walau ada tes yang gagal; tes dijalankan sesudahnya
+      # dan kegagalannya tetap membuat job merah.
+      - name: Build APK debug
+        run: ./gradlew assembleDebug --no-daemon ${GRADLE_EXTRA:-}
+
+      - name: Unggah APK
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: mythos-debug
+          path: app/build/outputs/apk/debug/*.apk
+
+      - name: Jalankan tes unit
+        run: ./gradlew testDebugUnitTest --no-daemon ${GRADLE_EXTRA:-}
+
+      # Laporan tes selalu diunggah (juga saat gagal) agar penyebab bisa dibaca tanpa mengulang build.
+      - name: Unggah laporan tes
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: laporan-tes-unit
+          path: app/build/reports/tests/testDebugUnitTest/
+          if-no-files-found: ignore
+
+      # Lint tidak menggagalkan job (belum ada baseline); hasilnya dipakai untuk membersihkan temuan bertahap.
+      - name: Jalankan lint
+        continue-on-error: true
+        run: ./gradlew lintDebug --no-daemon ${GRADLE_EXTRA:-}
+
+      - name: Unggah laporan lint
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: laporan-lint
+          path: app/build/reports/lint-results-debug.html
+          if-no-files-found: ignore

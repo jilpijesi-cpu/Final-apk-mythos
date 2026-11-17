@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_bg">#FFFFFF</color>
+    <color name="build_brand">#C6613F</color>
+    <color name="build_bg">#F9F9F6</color>
+    <color name="build_text">#141413</color>
+</resources>

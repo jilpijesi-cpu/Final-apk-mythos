@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# gh palsu untuk simulasi alur build_apk
+case "$1 $2" in
+  "api -i") printf 'HTTP/2.0 200 OK\nx-oauth-scopes: %s\n\n{}\n' "${FAKE_SCOPES:-repo, workflow}";;
+  "auth setup-git"|"auth status") exit 0;;
+  "repo view") exit 1;;
+  "repo create") git remote add origin "$FAKE_BARE" && git push -q -u origin HEAD || { echo "error: failed to push" >&2; exit 1; };;
+  "run list") echo 4242;;
+  "run view") case "$*" in *"--log-failed"*) echo "log";; *jobs*) echo "";; *) echo "completed success";; esac;;
+  "run download") out=""; while [ $# -gt 0 ]; do [ "$1" = "-D" ] && out="$2"; [ "$1" = "-n" ] && name="$2"; shift; done
+     [ "${name:-}" = "${FAKE_ARTIFACT:-mythos-debug}" ] || { echo "no artifact named $name" >&2; exit 1; }
+     mkdir -p "$out"; echo apk > "$out/app-debug.apk";;
+  *) echo "gh stub: $*" >&2; exit 1;;
+esac
