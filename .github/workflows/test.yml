@@ -1,0 +1,33 @@
+name: Tes Uji GithubBuild
+
+on:
+  push:
+    branches:
+      - 'mythos/**'
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: uploads/emojii
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Siapkan JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Siapkan Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Jalankan unit test
+        run: gradle testDebugUnitTest --no-daemon
+
+      - name: Build APK debug (unsigned)
+        run: gradle assembleDebug -PallowUnsigned=true --no-daemon

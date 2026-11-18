@@ -1,0 +1,84 @@
+---
+format_version: '13'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: android
+
+app:
+  envs:
+  - PROJECT_LOCATION: "."
+  - MODULE: app
+  - VARIANT: debug
+  # Bitrise tidak memegang keystore MYTHOS; build di sini hanya untuk verifikasi, bukan APK yang dipasang menimpa 2.40.
+  - ORG_GRADLE_PROJECT_allowUnsigned: "true"
+
+workflows:
+  # Workflow utama: bangun APK debug dulu (supaya artefak tetap ada walau tes gagal), lalu jalankan unit test.
+  primary:
+    summary: Build APK debug + unit test (WebToolsTest, VideoFramesTest, ToolDeclarationsTest, GeneralAssistTest, dst.)
+    steps:
+    - activate-ssh-key@4: {}
+    - git-clone@8: {}
+    - script@1:
+        title: Siapkan gradlew dan tampilkan versi toolchain
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
+            chmod +x ./gradlew
+            java -version
+            echo "ANDROID_HOME=$ANDROID_HOME"
+    - install-missing-android-tools@3:
+        inputs:
+        - gradlew_path: "./gradlew"
+    - android-build@1:
+        title: Build APK debug
+        inputs:
+        - project_location: "$PROJECT_LOCATION"
+        - module: "$MODULE"
+        - variant: "$VARIANT"
+        - build_type: apk
+    - deploy-to-bitrise-io@2:
+        title: Unggah APK
+    - android-unit-test@1:
+        title: Jalankan unit test
+        inputs:
+        - project_location: "$PROJECT_LOCATION"
+        - module: "$MODULE"
+        - variant: "$VARIANT"
+    - deploy-to-bitrise-io@2:
+        title: Unggah laporan tes
+        run_if: ".IsCI"
+
+  # Hanya tes, tanpa APK (lebih cepat).
+  unit-test:
+    summary: Jalankan testDebugUnitTest saja
+    steps:
+    - activate-ssh-key@4: {}
+    - git-clone@8: {}
+    - script@1:
+        title: Siapkan gradlew
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
+            chmod +x ./gradlew
+    - install-missing-android-tools@3:
+        inputs:
+        - gradlew_path: "./gradlew"
+    - android-unit-test@1:
+        inputs:
+        - project_location: "$PROJECT_LOCATION"
+        - module: "$MODULE"
+        - variant: "$VARIANT"
+    - deploy-to-bitrise-io@2: {}
+
+trigger_map:
+- push_branch: "*"
+  workflow: primary
+- pull_request_source_branch: "*"
+  workflow: unit-test
+
+meta:
+  bitrise.io:
+    stack: linux-docker-android-22.04
+    machine_type_id: standard
