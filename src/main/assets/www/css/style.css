@@ -1,0 +1,71 @@
+html, body {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    overflow-x: hidden;
+}
+body {
+    background: #0f172a;
+}
+.mobile-shell {
+    max-width: 430px;
+    min-height: 100dvh;
+    margin: 0 auto;
+    background: #f8fafc;
+    position: relative;
+}
+.form-section {
+    display: none;
+}
+.form-section.active {
+    display: block;
+    animation: fadeSlide 0.25s ease-out;
+}
+.tab-panel {
+    display: none;
+}
+.tab-panel.active {
+    display: block;
+    animation: fadeSlide 0.2s ease-out;
+}
+@keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.ktp-card-surface {
+    background: radial-gradient(circle at 15% 15%, #1d4ed8 0%, #1e3a8a 52%, #0f172a 100%);
+}
+.ktp-pattern {
+    background-image: radial-gradient(rgba(255, 255, 255, 0.14) 1px, transparent 1px);
+    background-size: 12px 12px;
+}
+.safe-top {
+    padding-top: max(0.875rem, env(safe-area-inset-top));
+}
+.safe-bottom {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+/* Mencegah auto-zoom di iOS saat fokus pada input/select */
+input, select, textarea {
+    font-size: 16px;
+}
+
+.range-mobile {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 8px;
+    border-radius: 9999px;
+    background: #cbd5e1;
+    touch-action: pan-y;
+}
+.range-mobile::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 9999px;
+    background: #4f46e5;
+    border: 2px solid #ffffff;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.3);
+    cursor: pointer;
+}
