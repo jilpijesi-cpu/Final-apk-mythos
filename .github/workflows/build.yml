@@ -22,7 +22,7 @@ jobs:
           gradle-version: 8.10
 
       - name: Initialize Gradle Android project
-        run: gradle init --type android --no-interaction
+        run: gradle init --type android
 
       - name: Assemble debug
         run: gradle assembleDebug --no-daemon
