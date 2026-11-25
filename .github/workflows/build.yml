@@ -24,7 +24,7 @@ jobs:
           gradle-version: '8.7'
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: gradle assembleDebug --no-daemon --stacktrace
 
       - name: Verify build marker
         run: echo "KITA_BUILD=ok"
