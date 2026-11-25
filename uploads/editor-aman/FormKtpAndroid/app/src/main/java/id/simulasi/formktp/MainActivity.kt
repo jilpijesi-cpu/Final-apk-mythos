@@ -1,0 +1,173 @@
+package id.simulasi.formktp
+
+import android.app.DatePickerDialog
+import android.content.ContentValues
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.os.Build
+import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.View
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
+import id.simulasi.formktp.databinding.ActivityMainBinding
+import id.simulasi.formktp.logic.KtpRenderer
+import id.simulasi.formktp.logic.NikParser
+import id.simulasi.formktp.model.KtpData
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
+import java.util.*
+
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var binding: ActivityMainBinding
+    private var photoBitmap: Bitmap? = null
+    private var signatureBitmap: Bitmap? = null
+    private var generatedBitmap: Bitmap? = null
+
+    private val pickPhotoLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let {
+            photoBitmap = uriToBitmap(it)
+            Toast.makeText(this, "Foto terpilih", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private val pickSignatureLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let {
+            signatureBitmap = uriToBitmap(it)
+            Toast.makeText(this, "Tanda tangan terpilih", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        setupListeners()
+    }
+
+    private fun setupListeners() {
+        binding.etNik.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                val nik = s.toString()
+                if (nik.length == 16) {
+                    val result = NikParser.parse(nik)
+                    if (result != null) {
+                        binding.etTglLahir.setText(result.tanggalLahir)
+                        binding.etKelDesa.setText(result.kecamatan) // Just a guess for auto-fill
+                        binding.etKecamatan.setText(result.kecamatan)
+                        Toast.makeText(this@MainActivity, "Data wilayah terdeteksi: ${result.provinsi}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        })
+
+        binding.etTglLahir.setOnClickListener {
+            showDatePicker { date -> binding.etTglLahir.setText(date) }
+        }
+
+        binding.btnPickPhoto.setOnClickListener { pickPhotoLauncher.launch("image/*") }
+        binding.btnPickSignature.setOnClickListener { pickSignatureLauncher.launch("image/*") }
+
+        binding.btnGenerate.setOnClickListener {
+            generateKtp()
+        }
+
+        binding.btnSave.setOnClickListener {
+            saveToGallery()
+        }
+    }
+
+    private fun generateKtp() {
+        val nik = binding.etNik.text.toString()
+        if (nik.length != 16) {
+            binding.tilNik.error = "NIK harus 16 digit"
+            return
+        }
+        binding.tilNik.error = null
+
+        val nikResult = NikParser.parse(nik)
+        
+        val data = KtpData(
+            nik = nik,
+            nama = binding.etNama.text.toString(),
+            tempatLahir = binding.etTempatLahir.text.toString(),
+            tanggalLahir = binding.etTglLahir.text.toString(),
+            jenisKelamin = if (nikResult?.jenisKelamin == "PEREMPUAN") "PEREMPUAN" else "LAKI-LAKI",
+            alamat = binding.etAlamat.text.toString(),
+            rtRw = binding.etRtRw.text.toString(),
+            kelDesa = binding.etKelDesa.text.toString(),
+            kecamatan = binding.etKecamatan.text.toString(),
+            provinsi = nikResult?.provinsi ?: "PROVINSI JAWA BARAT",
+            kabupaten = nikResult?.kabupaten ?: "KOTA BANDUNG",
+            kotaTerbit = nikResult?.kabupaten ?: "KOTA BANDUNG",
+            tanggalTerbit = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(Date()),
+            foto = photoBitmap,
+            tandaTangan = signatureBitmap
+        )
+
+        generatedBitmap = KtpRenderer.render(this, data)
+        binding.ivPreview.setImageBitmap(generatedBitmap)
+        binding.ivPreview.visibility = View.VISIBLE
+        binding.btnSave.visibility = View.VISIBLE
+        
+        Toast.makeText(this, "KTP Berhasil Dibuat", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun saveToGallery() {
+        val bitmap = generatedBitmap ?: return
+        val fileName = "KTP_${System.currentTimeMillis()}.png"
+        
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val values = ContentValues().apply {
+                    put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+                    put(MediaStore.Downloads.MIME_TYPE, "image/png")
+                    put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                }
+                val uri = contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+                if (uri != null) {
+                    contentResolver.openOutputStream(uri)?.use { 
+                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
+                    }
+                }
+            } else {
+                val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                if (!dir.exists()) dir.mkdirs()
+                val file = File(dir, fileName)
+                FileOutputStream(file).use { 
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
+                }
+            }
+            Toast.makeText(this, "Tersimpan di Download/$fileName", Toast.LENGTH_LONG).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Gagal menyimpan: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun uriToBitmap(uri: Uri): Bitmap? {
+        return try {
+            val inputStream = contentResolver.openInputStream(uri)
+            BitmapFactory.decodeStream(inputStream)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun showDatePicker(onDateSelected: (String) -> Unit) {
+        val calendar = Calendar.getInstance()
+        DatePickerDialog(this, { _, year, month, dayOfMonth ->
+            val date = String.format("%02d-%02d-%d", dayOfMonth, month + 1, year)
+            onDateSelected(date)
+        }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show()
+    }
+}

@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Form Input Data KTP Mobile - Simulasi DISDUKCAPIL</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        };
+    </script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="text-slate-800 antialiased">
+
+    <!-- MOBILE APP SHELL (MAKS 430PX, FULL-WIDTH DI PONSEL) -->
+    <div class="mobile-shell shadow-2xl flex flex-col">
+
+        <!-- STICKY TOP APP BAR -->
+        <header class="sticky top-0 z-30 bg-gradient-to-r from-indigo-600 via-violet-600 to-blue-600 text-white px-4 pb-3.5 safe-top shadow-md">
+            <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+                        <i data-lucide="id-card" class="w-5 h-5"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <h1 class="text-sm font-extrabold tracking-tight truncate leading-tight">Form KTP Digital</h1>
+                        <p class="text-[11px] text-indigo-100 truncate">Simulasi DISDUKCAPIL • 38 Provinsi</p>
+                    </div>
+                </div>
+                <button type="button" id="btnTogglePreviewDrawer"
+                        class="px-3 py-2 rounded-xl bg-white/15 active:bg-white/25 text-white text-xs font-bold flex items-center gap-1.5 shrink-0 transition-colors">
+                    <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                    <span>Kartu</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- NOTIFIKASI BANNER -->
+        <div id="alertBanner" class="hidden fixed top-16 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-[398px] z-50 p-3.5 rounded-2xl border flex items-start justify-between gap-2.5 shadow-xl" role="alert">
+            <div class="flex items-start gap-2.5">
+                <div id="alertIcon" class="mt-0.5 shrink-0"></div>
+                <div id="alertText" class="text-xs font-semibold leading-relaxed"></div>
+            </div>
+            <button type="button" id="closeAlertBtn" class="p-1.5 rounded-lg active:bg-black/10 shrink-0" aria-label="Tutup notifikasi">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <!-- PANEL 1: FORMULIR MOBILE & LIVE PREVIEW -->
+        <main id="panelForm" class="tab-panel active px-4 pt-4 pb-28 space-y-4 flex-1">
+
+            <!-- BAR AKSI CEPAT (DEMO & RESET) -->
+            <div class="space-y-2">
+                <div id="editModeBanner" class="hidden flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold">
+                    <span class="flex items-center gap-1.5">
+                        <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                        Mode Sunting Data
+                    </span>
+                    <button type="button" id="cancelEditBtn" class="px-2.5 py-1 rounded-lg bg-amber-200/70 text-amber-950 font-bold">Batal</button>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" id="btnDemoPalembang"
+                            class="min-h-[40px] px-2.5 py-2 text-[11px] font-bold rounded-xl bg-indigo-50 text-indigo-700 active:bg-indigo-100 border border-indigo-200/80 transition-colors flex items-center justify-center gap-1">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5 shrink-0"></i>
+                        <span class="truncate">Palembang</span>
+                    </button>
+                    <button type="button" id="btnDemoJakarta"
+                            class="min-h-[40px] px-2.5 py-2 text-[11px] font-bold rounded-xl bg-violet-50 text-violet-700 active:bg-violet-100 border border-violet-200/80 transition-colors flex items-center justify-center gap-1">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5 shrink-0"></i>
+                        <span class="truncate">Jakarta</span>
+                    </button>
+                    <button type="button" id="btnResetAll"
+                            class="min-h-[40px] px-2.5 py-2 text-[11px] font-bold rounded-xl bg-white text-slate-600 active:bg-slate-100 border border-slate-200 transition-colors flex items-center justify-center gap-1">
+                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5 shrink-0"></i>
+                        <span>Reset</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- COMPACT MOBILE STEPPER -->
+            <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-xs">
+                <div class="flex justify-between items-center relative">
+                    <div class="absolute left-6 right-6 top-4 h-0.5 bg-slate-200 z-0"></div>
+
+                    <button type="button" data-step-nav="1" id="stepIndicator1" class="step-nav-btn flex flex-col items-center flex-1 relative z-10">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-600 to-violet-600 text-white flex items-center justify-center font-bold text-xs shadow-sm transition-all">1</div>
+                        <span class="text-[10px] mt-1.5 font-bold text-indigo-600">NIK</span>
+                    </button>
+
+                    <button type="button" data-step-nav="2" id="stepIndicator2" class="step-nav-btn flex flex-col items-center flex-1 relative z-10">
+                        <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-xs transition-all">2</div>
+                        <span class="text-[10px] mt-1.5 font-medium text-slate-400">Pribadi</span>
+                    </button>
+
+                    <button type="button" data-step-nav="3" id="stepIndicator3" class="step-nav-btn flex flex-col items-center flex-1 relative z-10">
+                        <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-xs transition-all">3</div>
+                        <span class="text-[10px] mt-1.5 font-medium text-slate-400">Alamat</span>
+                    </button>
+
+                    <button type="button" data-step-nav="4" id="stepIndicator4" class="step-nav-btn flex flex-col items-center flex-1 relative z-10">
+                        <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-xs transition-all">4</div>
+                        <span class="text-[10px] mt-1.5 font-medium text-slate-400">Lainnya</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- KARTU FORMULIR UTAMA (1 KOLOM MOBILE) -->
+            <form id="ktpForm" class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-4" novalidate>
+
+                <!-- STEP 1: NIK & WILAYAH -->
+                <section id="step1" class="form-section active space-y-4">
+                    <div class="border-b border-slate-100 pb-2.5">
+                        <h2 class="text-base font-bold text-indigo-700 flex items-center gap-2">
+                            <i data-lucide="credit-card" class="w-4 h-4"></i>
+                            1. Informasi Dasar &amp; NIK
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-0.5">
+                            Ketik 16 digit NIK untuk deteksi otomatis wilayah, tanggal lahir, &amp; jenis kelamin.
+                        </p>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <div class="flex items-center justify-between">
+                            <label for="inputNik" class="block text-xs font-bold text-slate-700 uppercase">Nomor NIK <span class="text-rose-500">*</span></label>
+                            <span id="nikCharCounter" class="text-xs font-mono font-semibold text-indigo-600">0 / 16</span>
+                        </div>
+                        <input type="text" id="inputNik" maxlength="16" inputmode="numeric" enterkeyhint="next" autocomplete="off" required
+                               placeholder="1671065508980001"
+                               class="w-full min-h-[48px] px-3.5 py-3 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all font-mono tracking-wider bg-slate-50/70">
+
+                        <!-- Info Box Parser NIK -->
+                        <div id="nikParserCard" class="hidden bg-indigo-50/90 border-l-4 border-indigo-500 rounded-r-xl p-3 mt-2.5 space-y-1.5">
+                            <div class="flex items-center justify-between gap-2">
+                                <h3 class="text-[11px] font-bold text-indigo-800 uppercase tracking-wider flex items-center gap-1">
+                                    <i data-lucide="scan-line" class="w-3.5 h-3.5"></i>
+                                    Deteksi NIK
+                                </h3>
+                                <span id="nikStatusPill" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">Valid</span>
+                            </div>
+                            <div class="space-y-1 text-xs text-indigo-900 font-mono">
+                                <div class="flex justify-between gap-2"><span class="text-indigo-700/80">Provinsi</span><span id="parsedProv" class="font-bold text-right truncate">-</span></div>
+                                <div class="flex justify-between gap-2"><span class="text-indigo-700/80">Kab/Kota</span><span id="parsedKota" class="font-bold text-right truncate">-</span></div>
+                                <div class="flex justify-between gap-2"><span class="text-indigo-700/80">Kecamatan</span><span id="parsedKec" class="font-bold text-right truncate">-</span></div>
+                                <div class="flex justify-between gap-2"><span class="text-indigo-700/80">Gender</span><span id="parsedGender" class="font-bold text-right">-</span></div>
+                                <div class="flex justify-between gap-2"><span class="text-indigo-700/80">Tgl Lahir</span><span id="parsedTgl" class="font-bold text-right">-</span></div>
+                            </div>
+                            <p id="nikWilayahHint" class="hidden text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5 font-sans">
+                                Sebagian kode wilayah belum ada di preset — kamu tetap bisa memilih atau mengetik manual.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Cascading Dropdowns (1 Kolom Penuh untuk Jempol) -->
+                    <div class="space-y-3">
+                        <div class="space-y-1">
+                            <label for="selectProvinsi" class="block text-xs font-bold text-slate-700 uppercase">Provinsi <span class="text-rose-500">*</span></label>
+                            <select id="selectProvinsi" required class="w-full min-h-[48px] px-3 py-2.5 border-2 border-slate-200 rounded-xl focus:border-indigo-500 outline-none bg-white">
+                                <option value="">Pilih Provinsi (38 Provinsi)</option>
+                            </select>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label for="selectKabupaten" class="block text-xs font-bold text-slate-700 uppercase">Kabupaten / Kota <span class="text-rose-500">*</span></label>
+                            <select id="selectKabupaten" required disabled class="w-full min-h-[48px] px-3 py-2.5 border-2 border-slate-200 rounded-xl focus:border-indigo-500 outline-none bg-white disabled:bg-slate-100 disabled:text-slate-400">
+                                <option value="">Pilih Kabupaten/Kota</option>
+                            </select>
+                            <input type="text" id="inputKabupatenManual" placeholder="Ketik nama Kabupaten/Kota" class="hidden w-full min-h-[48px] px-3.5 py-2.5 border-2 border-indigo-200 rounded-xl uppercase focus:border-indigo-500 outline-none bg-indigo-50/20">
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label for="selectKecamatan" class="block text-xs font-bold text-slate-700 uppercase">Kecamatan <span class="text-rose-500">*</span></label>
+                            <select id="selectKecamatan" required disabled class="w-full min-h-[48px] px-3 py-2.5 border-2 border-slate-200 rounded-xl focus:border-indigo-500 outline-none bg-white disabled:bg-slate-100 disabled:text-slate-400">
+                                <option value="">Pilih Kecamatan</option>
+                            </select>
+                            <input type="text" id="inputKecamatanManual" placeholder="Ketik nama Kecamatan" class="hidden w-full min-h-[48px] px-3.5 py-2.5 border-2 border-indigo-200 rounded-xl uppercase focus:border-indigo-500 outline-none bg-indigo-50/20">
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label for="selectKelurahan" class="block text-xs font-bold text-slate-700 uppercase">Kelurahan / Desa <span class="text-rose-500">*</span></label>
+                            <select id="selectKelurahan" required disabled class="w-full min-h-[48px] px-3 py-2.5 border-2 border-slate-200 rounded-xl focus:border-indigo-500 outline-none bg-white disabled:bg-slate-100 disabled:text-slate-400">
+                                <option value="">Pilih Kelurahan/Desa</option>
+                            </select>
+                            <input type="text" id="inputKelurahanManual" placeholder="Ketik nama Kelurahan/Desa" class="hidden w-full min-h-[48px] px-3.5 py-2.5 border-2 border-indigo-200 rounded-xl uppercase focus:border-indigo-500 outline-none bg-indigo-50/20">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="space-y-1">
+                            <label for="inputTanggalLahir" class="block text-[11px] font-bold text-slate-500 uppercase">Tgl Lahir (NIK)</label>
+                            <input type="date" id="inputTanggalLahir" readonly class="w-full min-h-[46px] px-2.5 py-2 border-2 border-slate-200 rounded-xl bg-slate-100 text-slate-600 outline-none font-medium">
+                        </div>
+                        <div class="space-y-1">
+                            <label for="inputJenisKelamin" class="block text-[11px] font-bold text-slate-500 uppercase">Gender (NIK)</label>
+                            <input type="text" id="inputJenisKelamin" readonly placeholder="-" class="w-full min-h-[46px] px-3 py-2 border-2 border-slate-200 rounded-xl bg-slate-100 text-slate-600 outline-none font-medium">
+                        </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-100">
+                        <button type="button" data-next-step="2" class="step-action-btn w-full min-h-[48px] px-5 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 active:scale-[0.99] text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md">
+                            Lanjut ke Data Pribadi
+                            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- STEP 2: DATA PRIBADI -->
+                <section id="step2" class="form-section space-y-4">
+                    <div class="border-b border-slate-100 pb-2.5">
+                        <h2 class="text-base font-bold text-indigo-700 flex items-center gap-2">
+                            <i data-lucide="user" class="w-4 h-4"></i>
+                            2. Data Pribadi Pemohon
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Isi nama lengkap sesuai Akta Kelahiran atau Kartu Keluarga.</p>
+                    </div>
+
+                    <div class="space-y-1">
+                        <label for="inputNama" class="block text-xs font-bold text-slate-700 uppercase">Nama Lengkap <span class="text-rose-500">*</span></label>
+                        <input type="text" id="inputNama" enterkeyhint="next" required placeholder="CONTOH: SITI RAHMAWATI"
+                               class="w-full min-h-[48px] px-3.5 py-3 border-2 border-slate-200 rounded-xl focus:border-indigo-500 outline-none uppercase font-medium">
+                    </div>
+
+                    <div class="space-y-1">
+                        <label for="inputTempatLahir" class="block text-xs font-bold text-slate-700 uppercase">Tempat Lahir <span class="text-rose-500">*</span></label>
+                        <input type="text" id="inputTempatLahir" enterkeyhint="next" required placeholder="CONTOH: PALEMBANG"
+                               class="w-full min-h-[48px] px-3.5 py-3 border-2 border-slate-200 rounded-xl focus:border-indigo-500 outline-none uppercase font-medium">
+                    </div>
+
+                    <div class="space-y-1">
+                        <label for="selectGolDarah" class="block text-xs font-bold text-slate-700 uppercase">Golongan Darah</label>
+                        <select id="selectGolDarah" class="w-full min-h-[48px] px-3 py-2.5 border-2 border-slate-200 rounded-xl focus:border-indigo-500 bg-white outline-none">
+                            <option value="-">Tidak Tahu (-)</option>
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="AB">AB</option>
+                            <option value="O">O</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100">
+                        <button type="button" data-prev-step="1" class="step-action-btn min-h-[48px] px-4 py-3 bg-slate-100 active:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl flex items-center justify-center gap-1.5">
+                            <i data-lucide="arrow-left" class="w-4 h-4"></i> Kembali
+                        </button>
+                        <button type="button" data-next-step="3" class="step-action-btn min-h-[48px] px-4 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold text-sm rounded-xl flex items-center justify-center gap-1.5 shadow-md">
+                            Selanjutnya <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- STEP 3: ALAMAT -->
+                <section id="step3" class="form-section space-y-4">
+                    <div class="border-b border-slate-100 pb-2.5">
+                        <h2 class="text-base font-bold text-indigo-700 flex items-center gap-2">
+                            <i data-lucide="map-pin" class="w-4 h-4"></i>
+                            3. Alamat Domisili
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Tuliskan alamat lengkap beserta RT dan RW.</p>
+                    </div>
+
+                    <div class="space-y-1">
+                        <label for="inputAlamat" class="block text-xs font-bold text-slate-700 uppercase">Alamat Jalan / Blok <span class="text-rose-500">*</span></label>
+                        <textarea id="inputAlamat" required placeholder="CONTOH: JL. JEND. SUDIRMAN NO. 45"
+                                  class="w-full px-3.5 py-3 border-2 border-slate-200 rounded-xl focus:border-indigo-500 outline-none uppercase min-h-[96px]"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="space-y-1">
+                            <label for="inputRt" class="block text-xs font-bold text-slate-700 uppercase">RT</label>
+                            <input type="text" id="inputRt" maxlength="3" inputmode="numeric" enterkeyhint="next" placeholder="001"
+                                   class="w-full min-h-[48px] px-3 py-3 border-2 border-slate-200 rounded-xl text-center font-mono focus:border-indigo-500 outline-none">
+                        </div>
+                        <div class="space-y-1">
+                            <label for="inputRw" class="block text-xs font-bold text-slate-700 uppercase">RW</label>
+                            <input type="text" id="inputRw" maxlength="3" inputmode="numeric" enterkeyhint="next" placeholder="002"
+                                   class="w-full min-h-[48px] px-3 py-3 border-2 border-slate-200 rounded-xl text-center font-mono focus:border-indigo-500 outline-none">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100">
+                        <button type="button" data-prev-step="2" class="step-action-btn min-h-[48px] px-4 py-3 bg-slate-100 active:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl flex items-center justify-center gap-1.5">
+                            <i data-lucide="arrow-left" class="w-4 h-4"></i> Kembali
+                        </button>
+                        <button type="button" data-next-step="4" class="step-action-btn min-h-[48px] px-4 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold text-sm rounded-xl flex items-center justify-center gap-1.5 shadow-md">
+                            Selanjutnya <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- STEP 4: DATA LAINNYA & FOTO -->
+                <section id="step4" class="form-section space-y-4">
+                    <div class="border-b border-slate-100 pb-2.5">
+                        <h2 class="text-base font-bold text-indigo-700 flex items-center gap-2">
+                            <i data-lucide="briefcase" class="w-4 h-4"></i>
+                            4. Data Penunjang &amp; Foto
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Lengkapi data tambahan dan unggah pas foto dari galeri atau kamera HP.</p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="space-y-1">
+                            <label for="selectAgama" class="block text-xs font-bold text-slate-700 uppercase">Agama</label>
+                            <select id="selectAgama" class="w-full min-h-[48px] px-3 py-2.5 border-2 border-slate-200 rounded-xl focus:border-indigo-500 bg-white outline-none">
+                                <option value="">Pilih Agama</option>
+                                <option value="ISLAM">Islam</option>
+                                <option value="KRISTEN">Kristen</option>
+                                <option value="KATOLIK">Katolik</option>
+                                <option value="HINDU">Hindu</option>
+                                <option value="BUDDHA">Buddha</option>
+                                <option value="KONGHUCU">Konghucu</option>
+                                <option value="KEPERCAYAAN">Kepercayaan Terhadap Tuhan YME</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1">
+                            <label for="selectStatus" class="block text-xs font-bold text-slate-700 uppercase">Status Perkawinan</label>
+                            <select id="selectStatus" class="w-full min-h-[48px] px-3 py-2.5 border-2 border-slate-200 rounded-xl focus:border-indigo-500 bg-white outline-none">
+                                <option value="">Pilih Status</option>
+                                <option value="BELUM KAWIN">Belum Kawin</option>
+                                <option value="KAWIN">Kawin</option>
+                                <option value="CERAI HIDUP">Cerai Hidup</option>
+                                <option value="CERAI MATI">Cerai Mati</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1">
+                            <label for="inputPekerjaan" class="block text-xs font-bold text-slate-700 uppercase">Pekerjaan</label>
+                            <input type="text" id="inputPekerjaan" enterkeyhint="done" placeholder="CONTOH: KARYAWAN SWASTA"
+                                   class="w-full min-h-[48px] px-3.5 py-2.5 border-2 border-slate-200 rounded-xl focus:border-indigo-500 uppercase outline-none">
+                        </div>
+                        <div class="space-y-1">
+                            <label for="selectWarga" class="block text-xs font-bold text-slate-700 uppercase">Kewarganegaraan</label>
+                            <select id="selectWarga" class="w-full min-h-[48px] px-3 py-2.5 border-2 border-slate-200 rounded-xl focus:border-indigo-500 bg-white outline-none">
+                                <option value="WNI">WNI</option>
+                                <option value="WNA">WNA</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="inputTanggalTerbit" class="block text-xs font-bold text-slate-700 mb-1.5 uppercase">Tanggal Pembuatan Kartu</label>
+                        <input type="date" id="inputTanggalTerbit"
+                               class="w-full min-h-[48px] px-4 py-2.5 border-2 border-slate-200 rounded-xl focus:border-indigo-500 outline-none bg-white">
+                    </div>
+
+                    <!-- Upload Foto Mobile (Galeri / Kamera) -->
+                    <div class="space-y-2">
+                        <label class="block text-xs font-bold text-slate-700 uppercase">Pas Foto Pemohon (Opsional)</label>
+                        <div id="dropZone" role="button" tabindex="0"
+                             class="border-2 border-dashed border-slate-300 rounded-2xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer active:border-indigo-500 active:bg-indigo-50/40 transition-all text-center">
+                            <i data-lucide="camera" class="w-8 h-8 text-indigo-500"></i>
+                            <div>
+                                <p class="text-sm font-bold text-slate-700">Ketuk untuk pilih foto / kamera</p>
+                                <p class="text-xs text-slate-400 mt-0.5">JPG atau PNG • Maksimal 2 MB</p>
+                            </div>
+                        </div>
+
+                        <div id="fileInfoBox" class="hidden flex items-center gap-3 p-3 border-2 border-indigo-100 bg-indigo-50/40 rounded-xl">
+                            <img id="uploadedPreviewImg" class="w-12 h-14 object-cover rounded-lg border border-indigo-200 shrink-0" src="" alt="Thumbnail pas foto">
+                            <div class="flex-1 min-w-0">
+                                <p id="fileName" class="text-xs font-bold text-slate-800 truncate"></p>
+                                <p id="fileSize" class="text-[11px] text-slate-500"></p>
+                            </div>
+                            <button type="button" id="clearFotoBtn" class="min-w-[40px] min-h-[40px] flex items-center justify-center bg-rose-50 text-rose-600 active:bg-rose-100 rounded-xl" aria-label="Hapus foto">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <input type="file" id="fileFoto" accept="image/jpeg,image/png" class="hidden">
+                    </div>
+
+                    <!-- Tanda Tangan Pemohon (Canvas Pad) -->
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between gap-2">
+                            <label class="block text-xs font-bold text-slate-700 uppercase">Tanda Tangan (Opsional)</label>
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" id="btnUploadSignature"
+                                        class="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 active:bg-indigo-100 text-[11px] font-bold flex items-center gap-1">
+                                    <i data-lucide="upload" class="w-3.5 h-3.5"></i> Unggah
+                                </button>
+                                <button type="button" id="btnClearSignature"
+                                        class="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 active:bg-rose-100 text-[11px] font-bold flex items-center gap-1">
+                                    <i data-lucide="eraser" class="w-3.5 h-3.5"></i> Hapus
+                                </button>
+                            </div>
+                            <input type="file" id="inputSignatureFile" accept="image/png,image/jpeg" class="hidden">
+                        </div>
+                        <div class="border-2 border-dashed border-slate-300 rounded-2xl bg-white overflow-hidden">
+                            <canvas id="signaturePad" width="440" height="160"
+                                    class="w-full h-28 touch-none cursor-crosshair block"></canvas>
+                        </div>
+                        <p class="text-[11px] text-slate-400">Goreskan tanda tangan di kotak atas; otomatis tampil di bawah tanggal kartu.</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100">
+                        <button type="button" data-prev-step="3" class="step-action-btn min-h-[48px] px-4 py-3 bg-slate-100 active:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl flex items-center justify-center gap-1.5">
+                            <i data-lucide="arrow-left" class="w-4 h-4"></i> Kembali
+                        </button>
+                        <button type="submit" id="submitBtn" class="min-h-[48px] px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold text-sm rounded-xl flex items-center justify-center gap-1.5 active:scale-[0.99] shadow-lg">
+                            <i data-lucide="save" class="w-4 h-4"></i>
+                            <span id="submitBtnLabel">Simpan Data</span>
+                        </button>
+                    </div>
+                </section>
+            </form>
+
+            <!-- SEKSI LIVE PREVIEW KARTU (MOBILE STACK) -->
+            <section id="previewCardSection" class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                        <i data-lucide="eye" class="w-4 h-4 text-indigo-500"></i>
+                        Live Preview Kartu
+                    </span>
+                    <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-bold uppercase">
+                        Simulasi / Draf
+                    </span>
+                </div>
+
+                <!-- KARTU PRATINJAU HTML5 CANVAS (1011x638 • RASIO 1.586:1) -->
+                <div class="relative w-full">
+                    <canvas id="ktpCanvas" width="1011" height="638"
+                            class="w-full h-auto rounded-2xl shadow-lg border border-indigo-400/30 block bg-slate-900"></canvas>
+                </div>
+
+                <!-- KONTROL TEMPLATE LATAR & WARNA TEKS -->
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" id="btnUploadTemplate"
+                            class="min-h-[40px] px-2.5 py-2 rounded-xl text-[11px] font-bold bg-slate-100 text-slate-700 active:bg-slate-200 border border-slate-200 flex items-center justify-center gap-1">
+                        <i data-lucide="image-plus" class="w-3.5 h-3.5 shrink-0"></i>
+                        <span class="truncate">Ganti Template</span>
+                    </button>
+                    <button type="button" id="btnToggleTextTheme"
+                            class="min-h-[40px] px-2.5 py-2 rounded-xl text-[11px] font-bold bg-indigo-50 text-indigo-700 active:bg-indigo-100 border border-indigo-200 flex items-center justify-center gap-1">
+                        <i data-lucide="contrast" class="w-3.5 h-3.5 shrink-0"></i>
+                        <span id="textThemeLabel" class="truncate">Teks Terang</span>
+                    </button>
+                    <button type="button" id="btnResetTemplate"
+                            class="hidden min-h-[40px] px-2.5 py-2 rounded-xl text-[11px] font-bold bg-amber-50 text-amber-800 active:bg-amber-100 border border-amber-200 flex items-center justify-center gap-1">
+                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5 shrink-0"></i>
+                        <span class="truncate">Bawaan</span>
+                    </button>
+                    <input type="file" id="inputTemplateFile" accept="image/png,image/jpeg" class="hidden">
+                </div>
+
+                <!-- KALIBRASI POSISI & UKURAN TEKS (UNTUK TEMPLATE KUSTOM) -->
+                <div id="calibrationBox" class="hidden bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-slate-700 uppercase">Kalibrasi Teks & Ukuran</span>
+                        <button type="button" id="btnResetCalibration" class="text-[11px] font-bold text-indigo-600">Reset</button>
+                    </div>
+<div class="space-y-2.5">
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-[11px] font-semibold text-slate-600">
+                                <span>Geser Kiri/Kanan (X)</span>
+                                <strong id="calXVal" class="text-slate-900">0</strong>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" data-cal-target="calOffsetX" data-cal-delta="-1" class="cal-step-btn w-8 h-8 rounded-lg bg-white border border-slate-300 text-slate-700 font-bold text-sm active:bg-slate-100 shrink-0">-</button>
+                                <input type="range" id="calOffsetX" min="-40" max="40" step="1" value="0" class="range-mobile flex-1">
+                                <button type="button" data-cal-target="calOffsetX" data-cal-delta="1" class="cal-step-btn w-8 h-8 rounded-lg bg-white border border-slate-300 text-slate-700 font-bold text-sm active:bg-slate-100 shrink-0">+</button>
+                            </div>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-[11px] font-semibold text-slate-600">
+                                <span>Geser Atas/Bawah (Y)</span>
+                                <strong id="calYVal" class="text-slate-900">0</strong>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" data-cal-target="calOffsetY" data-cal-delta="-1" class="cal-step-btn w-8 h-8 rounded-lg bg-white border border-slate-300 text-slate-700 font-bold text-sm active:bg-slate-100 shrink-0">-</button>
+                                <input type="range" id="calOffsetY" min="-40" max="40" step="1" value="0" class="range-mobile flex-1">
+                                <button type="button" data-cal-target="calOffsetY" data-cal-delta="1" class="cal-step-btn w-8 h-8 rounded-lg bg-white border border-slate-300 text-slate-700 font-bold text-sm active:bg-slate-100 shrink-0">+</button>
+                            </div>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-[11px] font-semibold text-slate-600">
+                                <span>Ukuran Huruf</span>
+                                <strong id="calScaleVal" class="text-slate-900">100%</strong>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" data-cal-target="calFontScale" data-cal-delta="-1" class="cal-step-btn w-8 h-8 rounded-lg bg-white border border-slate-300 text-slate-700 font-bold text-sm active:bg-slate-100 shrink-0">-</button>
+                                <input type="range" id="calFontScale" min="80" max="120" step="1" value="100" class="range-mobile flex-1">
+                                <button type="button" data-cal-target="calFontScale" data-cal-delta="1" class="cal-step-btn w-8 h-8 rounded-lg bg-white border border-slate-300 text-slate-700 font-bold text-sm active:bg-slate-100 shrink-0">+</button>
+                            </div>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-[11px] font-semibold text-slate-600">
+                                <span>Ketebalan Huruf</span>
+                                <strong id="calWeightVal" class="text-slate-900">Normal</strong>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" data-cal-target="calFontWeight" data-cal-delta="-100" class="cal-step-btn w-8 h-8 rounded-lg bg-white border border-slate-300 text-slate-700 font-bold text-sm active:bg-slate-100 shrink-0">-</button>
+                                <input type="range" id="calFontWeight" min="400" max="800" step="100" value="500" class="range-mobile flex-1">
+                                <button type="button" data-cal-target="calFontWeight" data-cal-delta="100" class="cal-step-btn w-8 h-8 rounded-lg bg-white border border-slate-300 text-slate-700 font-bold text-sm active:bg-slate-100 shrink-0">+</button>
+                            </div>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-[11px] font-semibold text-slate-600">
+                                <span>Efek Blur (0.1px)</span>
+                                <strong id="calBlurVal" class="text-slate-900">0px</strong>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" data-cal-target="calBlurPx" data-cal-delta="-1" class="cal-step-btn w-8 h-8 rounded-lg bg-white border border-slate-300 text-slate-700 font-bold text-sm active:bg-slate-100 shrink-0">-</button>
+                                <input type="range" id="calBlurPx" min="0" max="20" step="1" value="0" class="range-mobile flex-1">
+                                <button type="button" data-cal-target="calBlurPx" data-cal-delta="1" class="cal-step-btn w-8 h-8 rounded-lg bg-white border border-slate-300 text-slate-700 font-bold text-sm active:bg-slate-100 shrink-0">+</button>
+                            </div>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-[11px] font-semibold text-slate-600">
+                                <span>Kehitaman Teks</span>
+                                <strong id="calOpacityVal" class="text-slate-900">100%</strong>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" data-cal-target="calOpacity" data-cal-delta="-5" class="cal-step-btn w-8 h-8 rounded-lg bg-white border border-slate-300 text-slate-700 font-bold text-sm active:bg-slate-100 shrink-0">-</button>
+                                <input type="range" id="calOpacity" min="40" max="100" step="5" value="100" class="range-mobile flex-1">
+                                <button type="button" data-cal-target="calOpacity" data-cal-delta="5" class="cal-step-btn w-8 h-8 rounded-lg bg-white border border-slate-300 text-slate-700 font-bold text-sm active:bg-slate-100 shrink-0">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" id="btnDownloadPng"
+                        class="w-full min-h-[46px] py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 active:scale-[0.99] text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-md text-xs">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    Unduh Pratinjau Kartu (PNG)
+                </button>
+
+                <p class="text-[11px] text-slate-500 leading-relaxed bg-slate-50 rounded-xl p-2.5 border border-slate-100">
+                    Pratinjau di atas adalah draf simulasi formulir (rasio ISO/IEC 7810 ID-1) untuk verifikasi input dan bukan dokumen kependudukan resmi.
+                </p>
+            </section>
+        </main>
+
+        <!-- PANEL 2: DATA TERSIMPAN (MOBILE LIST) -->
+        <section id="panelSaved" class="tab-panel px-4 pt-4 pb-28 space-y-4 flex-1">
+            <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-3">
+                <div>
+                    <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="database" class="w-4 h-4 text-indigo-600"></i>
+                        Data Pendaftar Tersimpan
+                    </h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Tersimpan di browser ponsel (<code class="font-mono text-indigo-600">localStorage</code>).</p>
+                </div>
+
+                <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                    <input type="text" id="searchSavedInput" placeholder="Cari NIK, Nama, atau Provinsi..."
+                           class="w-full min-h-[46px] pl-10 pr-4 py-2.5 border-2 border-slate-200 rounded-xl focus:border-indigo-500 outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" id="btnExportJson"
+                            class="min-h-[42px] px-3 py-2 rounded-xl text-xs font-bold bg-indigo-50 text-indigo-700 active:bg-indigo-100 border border-indigo-200 flex items-center justify-center gap-1.5">
+                        <i data-lucide="file-json" class="w-4 h-4"></i> Ekspor JSON
+                    </button>
+                    <button type="button" id="btnExportCsv"
+                            class="min-h-[42px] px-3 py-2 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 active:bg-emerald-100 border border-emerald-200 flex items-center justify-center gap-1.5">
+                        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Ekspor CSV
+                    </button>
+                </div>
+            </div>
+
+            <div id="savedListContainer" class="space-y-3"></div>
+
+            <div id="savedEmptyState" class="hidden text-center py-10 px-4 bg-white rounded-2xl border border-dashed border-slate-300">
+                <i data-lucide="inbox" class="w-9 h-9 text-slate-400 mx-auto mb-2"></i>
+                <p class="text-sm font-bold text-slate-700">Belum ada data tersimpan</p>
+                <p class="text-xs text-slate-500 mt-1">Isi formulir atau ketuk tombol Demo di tab Formulir lalu simpan.</p>
+            </div>
+        </section>
+
+        <!-- PANEL 3: PANDUAN & ARSITEKTUR (MOBILE) -->
+        <section id="panelGuide" class="tab-panel px-4 pt-4 pb-28 space-y-4 flex-1">
+            <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-3">
+                <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <i data-lucide="book-open" class="w-4 h-4 text-indigo-600"></i>
+                    Anatomi 16 Digit NIK
+                </h2>
+                <div class="grid grid-cols-2 gap-2 text-center font-mono">
+                    <div class="bg-indigo-50/70 rounded-xl p-2.5 border border-indigo-100">
+                        <div class="text-sm font-extrabold text-indigo-600">PP</div>
+                        <div class="text-[11px] font-sans text-slate-600 mt-0.5">Digit 1–2: Provinsi</div>
+                    </div>
+                    <div class="bg-violet-50/70 rounded-xl p-2.5 border border-violet-100">
+                        <div class="text-sm font-extrabold text-violet-600">KK</div>
+                        <div class="text-[11px] font-sans text-slate-600 mt-0.5">Digit 3–4: Kab/Kota</div>
+                    </div>
+                    <div class="bg-blue-50/70 rounded-xl p-2.5 border border-blue-100">
+                        <div class="text-sm font-extrabold text-blue-600">CC</div>
+                        <div class="text-[11px] font-sans text-slate-600 mt-0.5">Digit 5–6: Kecamatan</div>
+                    </div>
+                    <div class="bg-emerald-50/70 rounded-xl p-2.5 border border-emerald-100">
+                        <div class="text-sm font-extrabold text-emerald-600">DDMMYY</div>
+                        <div class="text-[11px] font-sans text-slate-600 mt-0.5">7–12: Lahir (+40 Wanita)</div>
+                    </div>
+                    <div class="bg-amber-50/70 rounded-xl p-2.5 border border-amber-100 col-span-2">
+                        <div class="text-sm font-extrabold text-amber-600">XXXX</div>
+                        <div class="text-[11px] font-sans text-slate-600 mt-0.5">Digit 13–16: Nomor Urut Pendaftaran</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-2.5">
+                <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <i data-lucide="smartphone" class="w-4 h-4 text-indigo-600"></i>
+                    Optimasi Khusus Mobile
+                </h3>
+                <ul class="text-xs text-slate-600 space-y-1.5 list-disc pl-4 leading-relaxed">
+                    <li>Tata letak 1 kolom penuh maks 430px dengan navigasi bawah (*bottom tab bar*) ramah jempol.</li>
+                    <li>Input &amp; tombol bertarget sentuh minimal 48px dengan ukuran teks 16px agar iOS tidak *auto-zoom*.</li>
+                    <li>Keyboard numerik otomatis (<code class="font-mono">inputmode="numeric"</code>) untuk NIK, RT, dan RW.</li>
+                    <li>Modal konfirmasi bergaya *bottom sheet* serta tombol lompat cepat ke pratinjau kartu.</li>
+                </ul>
+            </div>
+
+            <div class="bg-slate-900 text-slate-100 rounded-2xl p-4 space-y-2">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i data-lucide="folder-tree" class="w-4 h-4 text-amber-400"></i>
+                    Struktur Proyek Modular (ZIP)
+                </h3>
+                <pre class="text-[11px] font-mono text-indigo-200 leading-relaxed overflow-x-auto">form-ktp-modular/
+├── index.html
+├── css/style.css
+├── js/wilayah-data.js
+├── js/nik-parser.js
+├── js/storage.js
+├── js/app.js
+└── README.md</pre>
+            </div>
+        </section>
+
+        <!-- FIXED BOTTOM NAVIGATION BAR (KHUSUS MOBILE) -->
+        <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 px-3 pt-1.5 safe-bottom shadow-[0_-4px_20px_rgba(15,23,42,0.08)]" aria-label="Navigasi Bawah">
+            <div class="grid grid-cols-3 gap-1">
+                <button type="button" id="tabBtnForm" data-tab="form"
+                        class="tab-trigger min-h-[52px] rounded-xl flex flex-col items-center justify-center gap-1 transition-all text-indigo-600 bg-indigo-50/80 font-bold">
+                    <i data-lucide="file-edit" class="w-5 h-5"></i>
+                    <span class="text-[11px]">Formulir</span>
+                </button>
+                <button type="button" id="tabBtnSaved" data-tab="saved"
+                        class="tab-trigger min-h-[52px] rounded-xl flex flex-col items-center justify-center gap-1 transition-all text-slate-500 font-medium relative">
+                    <div class="relative">
+                        <i data-lucide="database" class="w-5 h-5"></i>
+                        <span id="savedCountBadge" class="absolute -top-1.5 -right-3 min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full bg-amber-400 text-slate-900 flex items-center justify-center">0</span>
+                    </div>
+                    <span class="text-[11px]">Tersimpan</span>
+                </button>
+                <button type="button" id="tabBtnGuide" data-tab="guide"
+                        class="tab-trigger min-h-[52px] rounded-xl flex flex-col items-center justify-center gap-1 transition-all text-slate-500 font-medium">
+                    <i data-lucide="book-open" class="w-5 h-5"></i>
+                    <span class="text-[11px]">Panduan</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- BOTTOM SHEET MODAL HASIL EKSPOR PNG -->
+        <div id="pngResultModal" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-end justify-center" role="dialog" aria-modal="true">
+            <div class="bg-white rounded-t-3xl w-full max-w-[430px] p-5 pb-7 shadow-2xl space-y-3.5">
+                <div class="w-10 h-1 rounded-full bg-slate-200 mx-auto"></div>
+                <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-extrabold text-slate-800">Hasil Ekspor Kartu (PNG)</h3>
+                    <button type="button" id="closePngModalBtn" class="p-1.5 rounded-lg bg-slate-100 text-slate-600">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <img id="pngResultImg" src="" alt="Hasil Ekspor PNG" class="w-full h-auto rounded-xl border border-slate-200 shadow-sm">
+                <p class="text-[11px] text-slate-500 leading-relaxed">
+                    Jika unduhan otomatis tidak berjalan di browser ponsel/pratinjau, <strong>tekan &amp; tahan gambar di atas</strong> lalu pilih <em>Simpan Gambar</em>.
+                </p>
+                <div class="grid grid-cols-2 gap-2">
+                    <a id="pngFallbackDownloadLink" href="#" download="Simulasi_KTP.png"
+                       class="min-h-[44px] py-2.5 px-3 bg-indigo-600 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 text-xs">
+                        <i data-lucide="download" class="w-4 h-4"></i> Unduh PNG
+                    </a>
+                    <button type="button" id="btnSharePng"
+                            class="min-h-[44px] py-2.5 px-3 bg-emerald-600 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 text-xs">
+                        <i data-lucide="share-2" class="w-4 h-4"></i> Bagikan / Simpan
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM SHEET MODAL KONFIRMASI HAPUS -->
+        <div id="deleteModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-end justify-center" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+            <div class="bg-white rounded-t-3xl w-full max-w-[430px] p-5 pb-7 shadow-2xl space-y-4">
+                <div class="w-10 h-1 rounded-full bg-slate-200 mx-auto"></div>
+                <div class="flex items-start gap-3">
+                    <div class="p-2.5 rounded-xl bg-rose-100 text-rose-600 shrink-0">
+                        <i data-lucide="trash-2" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 id="deleteModalTitle" class="text-base font-bold text-slate-800">Hapus Data Tersimpan?</h3>
+                        <p id="deleteModalDesc" class="text-xs text-slate-500 mt-1">Data yang dihapus tidak dapat dikembalikan.</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 pt-1">
+                    <button type="button" id="cancelDeleteBtn" class="min-h-[46px] px-4 py-2.5 rounded-xl text-sm font-bold bg-slate-100 text-slate-700 active:bg-slate-200">Batal</button>
+                    <button type="button" id="confirmDeleteBtn" class="min-h-[46px] px-4 py-2.5 rounded-xl text-sm font-bold bg-rose-600 text-white active:bg-rose-700">Ya, Hapus</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+        <script src="js/wilayah-data.js"></script>
+    <script src="js/nik-parser.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/canvas-renderer.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
