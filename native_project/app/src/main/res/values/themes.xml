@@ -1,5 +1,8 @@
 <resources>
-    <style name="Theme.FormKtp" parent="Theme.AppCompat.Light.NoActionBar">
+    <style name="Theme.FormKtp" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="colorPrimary">#4f46e5</item>
+        <item name="colorPrimaryVariant">#4338ca</item>
+        <item name="colorOnPrimary">#ffffff</item>
         <item name="android:statusBarColor">#4f46e5</item>
     </style>
 </resources>

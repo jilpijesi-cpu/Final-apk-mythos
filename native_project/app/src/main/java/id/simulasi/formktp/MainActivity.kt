@@ -98,6 +98,9 @@ class MainActivity : AppCompatActivity() {
 
         val nikResult = NikParser.parseIndonesianNIK(nik)
         
+        // Recycle old bitmap to free memory
+        generatedBitmap?.recycle()
+        
         // Decode background with scaling to avoid OOM
         val options = BitmapFactory.Options().apply {
             inJustDecodeBounds = true
@@ -132,6 +135,9 @@ class MainActivity : AppCompatActivity() {
         binding.ivPreview.setImageBitmap(generatedBitmap)
         binding.ivPreview.visibility = View.VISIBLE
         binding.btnSave.visibility = View.VISIBLE
+        
+        // Recycle the background bitmap after rendering
+        bgBitmap.recycle()
         
         Toast.makeText(this, "KTP Berhasil Dibuat", Toast.LENGTH_SHORT).show()
     }
