@@ -88,10 +88,8 @@ object KtpCardRenderer {
                 Rect(0, 0, CARD_WIDTH, CARD_HEIGHT),
                 Paint(Paint.FILTER_BITMAP_FLAG)
             )
-        } else {
-            drawDefaultBackground(canvas, !data.darkTextTheme)
-            drawStaticLabels(canvas, !data.darkTextTheme)
         }
+        drawStaticLabels(canvas, !data.darkTextTheme)
 
         drawDynamicFields(canvas, data)
         drawPhotoArea(canvas, data.photoBitmap, !data.darkTextTheme, hasCustomBg)
@@ -100,45 +98,45 @@ object KtpCardRenderer {
         return bitmap
     }
 
-    private fun drawDefaultBackground(canvas: Canvas, lightText: Boolean) {
-        val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-        val colors = if (lightText) {
-            intArrayOf(
-                Color.parseColor("#1D4ED8"),
-                Color.parseColor("#1E3A8A"),
-                Color.parseColor("#0F172A")
-            )
-        } else {
-            intArrayOf(
-                Color.parseColor("#E0F2FE"),
-                Color.parseColor("#BAE6FD"),
-                Color.parseColor("#E2E8F0")
-            )
-        }
-        bgPaint.shader = RadialGradient(
-            CARD_WIDTH * 0.15f,
-            CARD_HEIGHT * 0.15f,
-            CARD_WIDTH * 0.9f,
-            colors,
-            floatArrayOf(0f, 0.52f, 1f),
-            Shader.TileMode.CLAMP
-        )
-        canvas.drawRect(0f, 0f, CARD_WIDTH.toFloat(), CARD_HEIGHT.toFloat(), bgPaint)
-
-        val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = if (lightText) Color.argb(28, 255, 255, 255) else Color.argb(32, 15, 23, 42)
-            style = Paint.Style.FILL
-        }
-        var px = 14f
-        while (px < CARD_WIDTH) {
-            var py = 14f
-            while (py < CARD_HEIGHT) {
-                canvas.drawCircle(px, py, 1.5f, dotPaint)
-                py += 28f
-            }
-            px += 28f
-        }
-    }
+    // private fun drawDefaultBackground(canvas: Canvas, lightText: Boolean) {
+    //     val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    //     val colors = if (lightText) {
+    //         intArrayOf(
+    //             Color.parseColor("#1D4ED8"),
+    //             Color.parseColor("#1E3A8A"),
+    //             Color.parseColor("#0F172A")
+    //         )
+    //     } else {
+    //         intArrayOf(
+    //             Color.parseColor("#E0F2FE"),
+    //             Color.parseColor("#BAE6FD"),
+    //             Color.parseColor("#E2E8F0")
+    //         )
+    //     }
+    //     bgPaint.shader = RadialGradient(
+    //         CARD_WIDTH * 0.15f,
+    //         CARD_HEIGHT * 0.15f,
+    //         CARD_WIDTH * 0.9f,
+    //         colors,
+    //         floatArrayOf(0f, 0.52f, 1f),
+    //         Shader.TileMode.CLAMP
+    //     )
+    //     canvas.drawRect(0f, 0f, CARD_WIDTH.toFloat(), CARD_HEIGHT.toFloat(), bgPaint)
+    //
+    //     val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    //         color = if (lightText) Color.argb(28, 255, 255, 255) else Color.argb(32, 15, 23, 42)
+    //         style = Paint.Style.FILL
+    //     }
+    //     var px = 14f
+    //     while (px < CARD_WIDTH) {
+    //         var py = 14f
+    //         while (py < CARD_HEIGHT) {
+    //             canvas.drawCircle(px, py, 1.5f, dotPaint)
+    //             py += 28f
+    //         }
+    //         px += 28f
+    //     }
+    // }
 
     private fun drawStaticLabels(canvas: Canvas, lightText: Boolean) {
         val primaryLabelColor = if (lightText) Color.argb(240, 186, 230, 253) else Color.parseColor("#1E293B")
@@ -282,22 +280,6 @@ object KtpCardRenderer {
                 color = if (lightText) Color.argb(140, 125, 211, 252) else Color.argb(140, 30, 58, 138)
             }
             canvas.drawRoundRect(photoBox, radius, radius, borderPaint)
-        } else if (!hasCustomBg) {
-            val clipPath = Path().apply { addRoundRect(photoBox, radius, radius, Path.Direction.CW) }
-            canvas.save()
-            canvas.clipPath(clipPath)
-            val bg = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = if (lightText) Color.argb(140, 8, 47, 73) else Color.argb(120, 148, 163, 184)
-            }
-            canvas.drawRect(photoBox, bg)
-            val silhouette = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = if (lightText) Color.argb(110, 186, 230, 253) else Color.argb(140, 51, 65, 85)
-            }
-            val cx = photoBox.centerX()
-            val cy = photoBox.centerY()
-            canvas.drawCircle(cx, cy - 28f, 30f, silhouette)
-            canvas.drawArc(RectF(cx - 50f, cy + 8f, cx + 50f, cy + 108f), 180f, 180f, true, silhouette)
-            canvas.restore()
         }
     }
 

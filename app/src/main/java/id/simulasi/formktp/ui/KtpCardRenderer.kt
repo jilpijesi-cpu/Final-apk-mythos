@@ -90,8 +90,8 @@ object KtpCardRenderer {
             )
         } else {
             drawDefaultBackground(canvas, !data.darkTextTheme)
-            drawStaticLabels(canvas, !data.darkTextTheme)
         }
+        drawStaticLabels(canvas, !data.darkTextTheme)
 
         drawDynamicFields(canvas, data)
         drawPhotoArea(canvas, data.photoBitmap, !data.darkTextTheme, hasCustomBg)
