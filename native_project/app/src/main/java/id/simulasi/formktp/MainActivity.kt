@@ -98,6 +98,17 @@ class MainActivity : AppCompatActivity() {
 
         val nikResult = NikParser.parseIndonesianNIK(nik)
         
+        // Decode background with scaling to avoid OOM
+        val options = BitmapFactory.Options().apply {
+            inJustDecodeBounds = true
+        }
+        BitmapFactory.decodeResource(resources, R.drawable.default_bg, options)
+        
+        // Target size for KTP background is 1011x638
+        options.inSampleSize = calculateInSampleSize(options, 1011, 638)
+        options.inJustDecodeBounds = false
+        val bgBitmap = BitmapFactory.decodeResource(resources, R.drawable.default_bg, options)
+
         val data = KtpData(
             nik = nik,
             nama = binding.etNama.text.toString(),
@@ -114,7 +125,7 @@ class MainActivity : AppCompatActivity() {
             tanggalTerbit = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(Date()),
             foto = photoBitmap,
             tandaTangan = signatureBitmap,
-            backgroundBitmap = BitmapFactory.decodeResource(resources, R.drawable.default_bg)
+            backgroundBitmap = bgBitmap
         )
 
         generatedBitmap = KtpRenderer.render(data)
@@ -123,6 +134,40 @@ class MainActivity : AppCompatActivity() {
         binding.btnSave.visibility = View.VISIBLE
         
         Toast.makeText(this, "KTP Berhasil Dibuat", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
+        val (height: Int, width: Int) = options.outHeight to options.outWidth
+        var inSampleSize = 1
+        if (height > reqHeight || width > reqWidth) {
+            val halfHeight: Int = height / 2
+            val halfWidth: Int = width / 2
+            while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
+                inSampleSize *= 2
+            }
+        }
+        return inSampleSize
+    }
+
+    private fun uriToBitmap(uri: Uri): Bitmap? {
+        return try {
+            val options = BitmapFactory.Options().apply {
+                inJustDecodeBounds = true
+            }
+            contentResolver.openInputStream(uri)?.use { 
+                BitmapFactory.decodeStream(it, null, options)
+            }
+            
+            // Scale down user photos (usually large) to max 1024px to save memory
+            options.inSampleSize = calculateInSampleSize(options, 1024, 1024)
+            options.inJustDecodeBounds = false
+            
+            contentResolver.openInputStream(uri)?.use { 
+                BitmapFactory.decodeStream(it, null, options)
+            }
+        } catch (e: Exception) {
+            null
+        }
     }
 
     private fun saveToGallery() {
@@ -153,15 +198,6 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "Tersimpan di Download/$fileName", Toast.LENGTH_LONG).show()
         } catch (e: Exception) {
             Toast.makeText(this, "Gagal menyimpan: ${e.message}", Toast.LENGTH_LONG).show()
-        }
-    }
-
-    private fun uriToBitmap(uri: Uri): Bitmap? {
-        return try {
-            val inputStream = contentResolver.openInputStream(uri)
-            BitmapFactory.decodeStream(inputStream)
-        } catch (e: Exception) {
-            null
         }
     }
 
