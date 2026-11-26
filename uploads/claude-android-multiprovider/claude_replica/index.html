@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7f5f0">
+  <meta name="description" content="A Claude-inspired Android-first chat interface with bring-your-own-provider AI gateway.">
+  <title>Claude Replica — Multi-Provider</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <aside id="sidebar" class="sidebar" aria-label="Main navigation">
+      <div class="sidebar-top">
+        <a class="brand" href="#chat" aria-label="Claude home">
+          <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M20 2.5 23.3 14.8 35 9.5 27.4 20l10.1 7.2-13.4-.4L20 39l-4.1-12.2-13.4.4L12.6 20 5 9.5l11.7 5.3L20 2.5Z" fill="currentColor"/></svg></span>
+          <span class="brand-name">Claude</span>
+        </a>
+        <button class="icon-btn mobile-close" id="closeSidebar" aria-label="Close navigation">×</button>
+      </div>
+      <button class="new-chat-btn" id="newChatBtn"><span class="nav-icon" data-icon="plus"></span><span>New chat</span><kbd>⌘ K</kbd></button>
+      <button class="nav-item" data-page="search"><span class="nav-icon" data-icon="search"></span><span>Search</span><span class="nav-hint">⌘ F</span></button>
+      <div class="nav-divider"></div>
+      <nav class="nav-list">
+        <button class="nav-item active" data-page="chat"><span class="nav-icon" data-icon="message"></span><span>Chats</span></button>
+        <button class="nav-item" data-page="projects"><span class="nav-icon" data-icon="folder"></span><span>Projects</span></button>
+        <button class="nav-item" data-page="artifacts"><span class="nav-icon" data-icon="grid"></span><span>Artifacts</span></button>
+        <button class="nav-item" data-page="code"><span class="nav-icon" data-icon="terminal"></span><span>Code</span><span class="nav-pill">New</span></button>
+        <button class="nav-item" data-page="cowork"><span class="nav-icon" data-icon="monitor"></span><span>Cowork</span></button>
+      </nav>
+      <div class="sidebar-section-head"><span>Recents</span><button class="tiny-icon" id="recentMore" aria-label="Recent chat options">···</button></div>
+      <div id="recentList" class="recent-list"><div class="recent-empty">Your recent chats will appear here.</div></div>
+      <div class="sidebar-spacer"></div>
+      <button class="nav-item sidebar-settings" data-page="settings"><span class="nav-icon" data-icon="settings"></span><span>Settings</span></button>
+      <div class="account-row" id="accountButton" role="button" tabindex="0">
+        <span class="avatar">U</span><span class="account-copy"><strong>Local account</strong><small>Free plan · Demo</small></span><span class="more-dots">···</span>
+      </div>
+    </aside>
+    <div id="sidebarScrim" class="sidebar-scrim"></div>
+    <main class="main-shell">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="icon-btn mobile-menu" id="openSidebar" aria-label="Open navigation"><span data-icon="menu"></span></button>
+          <div id="pageTitle" class="page-title">Claude</div>
+          <span class="page-context" id="pageContext"></span>
+        </div>
+        <div class="topbar-actions">
+          <button class="model-trigger" id="modelTrigger"><span class="model-dot"></span><span id="modelLabel">Sonnet 4.6</span><span class="chevron">⌄</span></button>
+          <button class="icon-btn" id="newChatTop" aria-label="New chat" title="New chat"><span data-icon="edit"></span></button>
+          <button class="icon-btn" id="themeToggle" aria-label="Toggle theme" title="Toggle theme"><span data-icon="sun"></span></button>
+        </div>
+      </header>
+      <section id="view" class="view" aria-live="polite"></section>
+    </main>
+  </div>
+  <div id="modalRoot"></div>
+  <input id="filePicker" type="file" multiple hidden>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+# Generate both values with: openssl rand -hex 32
+VAULT_MASTER_KEY=REPLACE_WITH_RANDOM_32_BYTE_SECRET
+ADMIN_TOKEN=REPLACE_WITH_RANDOM_ADMIN_TOKEN
+HOST=127.0.0.1
+PORT=8787
+# Optional absolute path for encrypted provider vault
+# VAULT_FILE=/data/user/0/com.replica.claude/files/vault.json

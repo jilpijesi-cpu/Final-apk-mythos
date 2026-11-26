@@ -1,0 +1,13 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.replica.claude'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'com.replica.claude'
+        minSdk 26
+        targetSdk 35
+        versionCode 2
+        versionName '1.1.0'
+    }
+}
