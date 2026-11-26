@@ -25,12 +25,12 @@ jobs:
 
       - name: Build Debug APK
         run: |
-          cd claude_replica/android
-          chmod +x ../gradlew
-          ../gradlew assembleDebug
+          cd uploads/claude-android-multiprovider/claude_replica/android
+          chmod +x ../../gradlew
+          ../../gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
-          path: claude_replica/android/app/build/outputs/apk/debug/*.apk
+          path: uploads/claude-android-multiprovider/claude_replica/android/app/build/outputs/apk/debug/*.apk
