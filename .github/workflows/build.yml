@@ -26,8 +26,8 @@ jobs:
       - name: Build Debug APK
         run: |
           cd uploads/claude-android-multiprovider/claude_replica/android
-          chmod +x ../../gradlew
-          ../../gradlew assembleDebug
+          chmod +x ../gradlew
+          ../gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
