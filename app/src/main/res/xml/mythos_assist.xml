@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<voice-interaction-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:sessionService="com.build.mythos.AssistSessionService"
+    android:recognitionService="com.build.mythos.AssistRecognitionService"
+    android:settingsActivity="com.build.mythos.MainActivity"
+    android:supportsAssist="true"
+    android:supportsLaunchVoiceAssistFromKeyguard="false" />
