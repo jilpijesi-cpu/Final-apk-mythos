@@ -93,14 +93,20 @@ object NikParser {
         }
 
         val dateIso = String.format(Locale.US, "%04d-%02d-%02d", fullYear, month, day)
+        val cityName = WilayahData.cities[kodeKota] ?: (if (kodeKota.length >= 3 && kodeKota[2] == '7') "Kota $kodeKota" else "Kabupaten $kodeKota")
+        if (WilayahData.cities[kodeKota] == null) WilayahData.cities[kodeKota] = cityName
+        
+        val kecName = WilayahData.districts[kodeKec] ?: "Kecamatan $kodeKec"
+        if (WilayahData.districts[kodeKec] == null) WilayahData.districts[kodeKec] = kecName
+
         return NikParseResult(
             valid = true,
             kodeProv = kodeProv,
             kodeKota = kodeKota,
             kodeKec = kodeKec,
             provName = provName,
-            cityName = WilayahData.cities[kodeKota] ?: (if (kodeKota.length >= 3 && kodeKota[2] == '7') "Kota $kodeKota" else "Kabupaten $kodeKota"),
-            kecName = WilayahData.districts[kodeKec] ?: "Kecamatan $kodeKec",
+            cityName = cityName,
+            kecName = kecName,
             dateIso = dateIso,
             gender = if (isFemale) "PEREMPUAN" else "LAKI-LAKI"
         )

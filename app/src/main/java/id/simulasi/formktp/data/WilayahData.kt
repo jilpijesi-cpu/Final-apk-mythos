@@ -181,12 +181,34 @@ object WilayahData {
     fun provinceCodeByName(name: String): String? =
         provinces.entries.firstOrNull { it.value.equals(name, ignoreCase = true) }?.key
 
-    fun citiesForProvince(provCode: String): List<Pair<String, String>> =
-        cities.entries.filter { it.key.startsWith(provCode) }.map { it.key to it.value }
+    fun citiesForProvince(provCode: String): List<Pair<String, String>> {
+        val list = cities.entries.filter { it.key.startsWith(provCode) }.map { it.key to it.value }.toMutableList()
+        // Ensure at least a default city entry exists if none pre-registered
+        if (list.isEmpty()) {
+            val defaultCityCode = "${provCode}01"
+            val defaultCityName = "Kabupaten/Kota $provCode"
+            cities[defaultCityCode] = defaultCityName
+            list.add(defaultCityCode to defaultCityName)
+        }
+        return list
+    }
 
-    fun districtsForCity(cityCode: String): List<Pair<String, String>> =
-        districts.entries.filter { it.key.startsWith(cityCode) }.map { it.key to it.value }
+    fun districtsForCity(cityCode: String): List<Pair<String, String>> {
+        val list = districts.entries.filter { it.key.startsWith(cityCode) }.map { it.key to it.value }.toMutableList()
+        if (list.isEmpty()) {
+            val defaultKecCode = "${cityCode}01"
+            val defaultKecName = "Kecamatan $cityCode"
+            districts[defaultKecCode] = defaultKecName
+            list.add(defaultKecCode to defaultKecName)
+        }
+        return list
+    }
 
-    fun villagesForDistrict(kecCode: String): List<String> =
-        villages[kecCode].orEmpty()
+    fun villagesForDistrict(kecCode: String): List<String> {
+        val list = villages[kecCode]
+        if (!list.isNullOrEmpty()) return list
+        val defaultVillages = listOf("Kelurahan Sukamaju", "Desa Makmur", "Kampung Baru")
+        (villages as MutableMap)[kecCode] = defaultVillages
+        return defaultVillages
+    }
 }
