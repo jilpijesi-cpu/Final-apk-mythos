@@ -2,6 +2,7 @@ package id.simulasi.formktp.ui
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import androidx.core.content.res.ResourcesCompat
 import id.simulasi.formktp.R
 import android.graphics.Canvas
@@ -89,7 +90,7 @@ object KtpCardRenderer {
                 Paint(Paint.FILTER_BITMAP_FLAG)
             )
         } else {
-            drawDefaultBackground(canvas, !data.darkTextTheme)
+            drawDefaultBackground(context, canvas)
         }
 
         drawStaticLabels(canvas, !data.darkTextTheme)
@@ -101,44 +102,24 @@ object KtpCardRenderer {
         return bitmap
     }
 
-    private fun drawDefaultBackground(canvas: Canvas, lightText: Boolean) {
-        val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-        val colors = if (lightText) {
-            intArrayOf(
-                Color.parseColor("#1D4ED8"),
-                Color.parseColor("#1E3A8A"),
-                Color.parseColor("#0F172A")
-            )
-        } else {
-            intArrayOf(
-                Color.parseColor("#E0F2FE"),
-                Color.parseColor("#BAE6FD"),
-                Color.parseColor("#E2E8F0")
-            )
-        }
-        bgPaint.shader = RadialGradient(
-            CARD_WIDTH * 0.15f,
-            CARD_HEIGHT * 0.15f,
-            CARD_WIDTH * 0.9f,
-            colors,
-            floatArrayOf(0f, 0.52f, 1f),
-            Shader.TileMode.CLAMP
-        )
-        canvas.drawRect(0f, 0f, CARD_WIDTH.toFloat(), CARD_HEIGHT.toFloat(), bgPaint)
-
-        val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = if (lightText) Color.argb(28, 255, 255, 255) else Color.argb(32, 15, 23, 42)
-            style = Paint.Style.FILL
-        }
-        var px = 14f
-        while (px < CARD_WIDTH) {
-            var py = 14f
-            while (py < CARD_HEIGHT) {
-                canvas.drawCircle(px, py, 1.5f, dotPaint)
-                py += 28f
+    private fun drawDefaultBackground(context: Context, canvas: Canvas) {
+        try {
+            val bgBmp = BitmapFactory.decodeResource(context.resources, R.drawable.ktp_default_bg)
+            if (bgBmp != null) {
+                canvas.drawBitmap(
+                    bgBmp,
+                    null,
+                    Rect(0, 0, CARD_WIDTH, CARD_HEIGHT),
+                    Paint(Paint.FILTER_BITMAP_FLAG)
+                )
+                return
             }
-            px += 28f
+        } catch (_: Exception) {}
+
+        val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#1D4ED8")
         }
+        canvas.drawRect(0f, 0f, CARD_WIDTH.toFloat(), CARD_HEIGHT.toFloat(), bgPaint)
     }
 
     private fun drawStaticLabels(canvas: Canvas, lightText: Boolean) {
