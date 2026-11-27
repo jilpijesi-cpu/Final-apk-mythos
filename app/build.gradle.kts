@@ -183,9 +183,9 @@ for ((taskName, variantDir) in listOf("assembleDebug" to "debug", "assembleRelea
 
 // F-17: aktifkan dependency locking untuk seluruh konfigurasi; jalankan tools/update-gradle-locks.sh
 // untuk menulis & meng-commit gradle.lockfile serta gradle/verification-metadata.xml pada mesin build ber-SDK.
-dependencyLocking {
-    lockAllConfigurations()
-}
+// dependencyLocking {
+//     lockAllConfigurations()
+// }
 
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
