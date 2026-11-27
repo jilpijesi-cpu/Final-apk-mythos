@@ -99,8 +99,8 @@ object NikParser {
             kodeKota = kodeKota,
             kodeKec = kodeKec,
             provName = provName,
-            cityName = WilayahData.cities[kodeKota],
-            kecName = WilayahData.districts[kodeKec],
+            cityName = WilayahData.cities[kodeKota] ?: (if (kodeKota.length >= 3 && kodeKota[2] == '7') "Kota $kodeKota" else "Kabupaten $kodeKota"),
+            kecName = WilayahData.districts[kodeKec] ?: "Kecamatan $kodeKec",
             dateIso = dateIso,
             gender = if (isFemale) "PEREMPUAN" else "LAKI-LAKI"
         )
