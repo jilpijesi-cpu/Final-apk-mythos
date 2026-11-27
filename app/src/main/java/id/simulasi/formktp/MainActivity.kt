@@ -430,7 +430,18 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        val provCode = provinceEntries[pos - 1].key
+        val provEntry = provinceEntries.getOrNull(pos - 1) ?: run {
+            currentCityEntries = emptyList()
+            setSpinnerItems(b.spKabupaten, listOf("Pilih Kabupaten/Kota"))
+            setSpinnerItems(b.spKecamatan, listOf("Pilih Kecamatan"))
+            setSpinnerItems(b.spKelurahan, listOf("Pilih Kelurahan/Desa"))
+            b.spKabupaten.isEnabled = false
+            b.spKecamatan.isEnabled = false
+            b.spKelurahan.isEnabled = false
+            updateLivePreview()
+            return
+        }
+        val provCode = provEntry.key
         currentCityEntries = WilayahData.citiesForProvince(provCode)
         val cityLabels = mutableListOf("Pilih Kabupaten/Kota")
         currentCityEntries.forEach { cityLabels.add(it.second) }
@@ -466,7 +477,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        currentDistrictEntries = if (!isManual && pos - 1 < currentCityEntries.size) {
+        currentDistrictEntries = if (!isManual && pos > 0 && pos - 1 < currentCityEntries.size) {
             WilayahData.districtsForCity(currentCityEntries[pos - 1].first)
         } else {
             emptyList()
@@ -500,7 +511,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        currentVillages = if (!isManual && pos - 1 < currentDistrictEntries.size) {
+        currentVillages = if (!isManual && pos > 0 && pos - 1 < currentDistrictEntries.size) {
             WilayahData.villagesForDistrict(currentDistrictEntries[pos - 1].first)
         } else {
             emptyList()
@@ -584,7 +595,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun getResolvedWilayah(): List<String> {
         val provPos = b.spProvinsi.selectedItemPosition
-        val prov = if (provPos > 0) provinceEntries[provPos - 1].value else ""
+        val prov = if (provPos > 0) provinceEntries.getOrNull(provPos - 1)?.value.orEmpty() else ""
 
         val kabSel = b.spKabupaten.selectedItem?.toString().orEmpty()
         val kab = when {

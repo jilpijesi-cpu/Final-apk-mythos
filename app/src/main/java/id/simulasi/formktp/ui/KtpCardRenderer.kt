@@ -58,54 +58,72 @@ object KtpCardRenderer {
     private var interBold: Typeface? = null
     private var nikMonoBold: Typeface? = null
 
+    private var cachedDefaultBg: Bitmap? = null
+
     private fun ensureFonts(context: Context) {
-        if (interMedium == null) {
-            interMedium = ResourcesCompat.getFont(context, R.font.inter_medium) ?: Typeface.SANS_SERIF
-        }
-        if (interSemiBold == null) {
-            interSemiBold = ResourcesCompat.getFont(context, R.font.inter_semibold) ?: Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
-        }
-        if (interBold == null) {
-            interBold = ResourcesCompat.getFont(context, R.font.inter_bold) ?: Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
-        }
-        if (nikMonoBold == null) {
-            nikMonoBold = ResourcesCompat.getFont(context, R.font.nik_mono_bold) ?: Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+        try {
+            if (interMedium == null) {
+                interMedium = ResourcesCompat.getFont(context, R.font.inter_medium) ?: Typeface.SANS_SERIF
+            }
+            if (interSemiBold == null) {
+                interSemiBold = ResourcesCompat.getFont(context, R.font.inter_semibold) ?: Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            }
+            if (interBold == null) {
+                interBold = ResourcesCompat.getFont(context, R.font.inter_bold) ?: Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            }
+            if (nikMonoBold == null) {
+                nikMonoBold = ResourcesCompat.getFont(context, R.font.nik_mono_bold) ?: Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+            }
+        } catch (_: Throwable) {
+            interMedium = Typeface.SANS_SERIF
+            interSemiBold = Typeface.DEFAULT_BOLD
+            interBold = Typeface.DEFAULT_BOLD
+            nikMonoBold = Typeface.MONOSPACE
         }
     }
 
     fun render(context: Context, data: CardPreviewData): Bitmap {
         ensureFonts(context)
-        val bitmap = Bitmap.createBitmap(CARD_WIDTH, CARD_HEIGHT, Bitmap.Config.ARGB_8888)
+        val bitmap = try {
+            Bitmap.createBitmap(CARD_WIDTH, CARD_HEIGHT, Bitmap.Config.ARGB_8888)
+        } catch (_: Throwable) {
+            return Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+        }
         val canvas = Canvas(bitmap)
 
-        // Draw background first
-        if (data.customBackgroundBitmap != null &&
-            data.customBackgroundBitmap.width > 0 &&
-            data.customBackgroundBitmap.height > 0
-        ) {
-            canvas.drawBitmap(
-                data.customBackgroundBitmap,
-                null,
-                Rect(0, 0, CARD_WIDTH, CARD_HEIGHT),
-                Paint(Paint.FILTER_BITMAP_FLAG)
-            )
-        } else {
-            drawDefaultBackground(context, canvas)
-        }
+        try {
+            // Draw background first
+            if (data.customBackgroundBitmap != null &&
+                !data.customBackgroundBitmap.isRecycled &&
+                data.customBackgroundBitmap.width > 0 &&
+                data.customBackgroundBitmap.height > 0
+            ) {
+                canvas.drawBitmap(
+                    data.customBackgroundBitmap,
+                    null,
+                    Rect(0, 0, CARD_WIDTH, CARD_HEIGHT),
+                    Paint(Paint.FILTER_BITMAP_FLAG)
+                )
+            } else {
+                drawDefaultBackground(context, canvas)
+            }
 
-        drawStaticLabels(canvas, !data.darkTextTheme)
-        drawDynamicFields(canvas, data)
-        drawPhotoArea(canvas, data.photoBitmap, !data.darkTextTheme, data.customBackgroundBitmap != null)
-        drawSignatureArea(canvas, data.signatureBitmap, !data.darkTextTheme)
-        drawPermanentSimulationWatermark(canvas, !data.darkTextTheme)
+            drawStaticLabels(canvas, !data.darkTextTheme)
+            drawDynamicFields(canvas, data)
+            drawPhotoArea(canvas, data.photoBitmap, !data.darkTextTheme, data.customBackgroundBitmap != null)
+            drawSignatureArea(canvas, data.signatureBitmap, !data.darkTextTheme)
+        } catch (_: Throwable) {}
 
         return bitmap
     }
 
     private fun drawDefaultBackground(context: Context, canvas: Canvas) {
         try {
-            val bgBmp = BitmapFactory.decodeResource(context.resources, R.drawable.ktp_default_bg)
-            if (bgBmp != null) {
+            if (cachedDefaultBg == null || cachedDefaultBg?.isRecycled == true) {
+                cachedDefaultBg = BitmapFactory.decodeResource(context.resources, R.drawable.ktp_default_bg)
+            }
+            val bgBmp = cachedDefaultBg
+            if (bgBmp != null && !bgBmp.isRecycled) {
                 canvas.drawBitmap(
                     bgBmp,
                     null,
@@ -114,7 +132,7 @@ object KtpCardRenderer {
                 )
                 return
             }
-        } catch (_: Exception) {}
+        } catch (_: Throwable) {}
 
         val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.parseColor("#1D4ED8")
