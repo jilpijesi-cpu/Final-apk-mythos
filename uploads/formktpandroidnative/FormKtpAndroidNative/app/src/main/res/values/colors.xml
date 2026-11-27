@@ -1,0 +1,15 @@
+<resources>
+    <color name="brand_primary">#4F46E5</color>
+    <color name="brand_primary_dark">#3730A3</color>
+    <color name="brand_secondary">#0D9488</color>
+    <color name="surface_bg">#F8FAFC</color>
+    <color name="surface_card">#FFFFFF</color>
+    <color name="text_primary">#0F172A</color>
+    <color name="text_secondary">#475569</color>
+    <color name="border_subtle">#CBD5E1</color>
+    <color name="danger">#DC2626</color>
+    <color name="warning_bg">#FEF3C7</color>
+    <color name="warning_text">#92400E</color>
+    <color name="success_bg">#D1FAE5</color>
+    <color name="success_text">#065F46</color>
+</resources>
