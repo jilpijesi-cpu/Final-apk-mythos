@@ -6,4 +6,3 @@ b96b956d2e5d01252b291b4f91e92a6ac3dfeca0b0d77fe7949073a2a078bdfa  ./skrip/buat-k
 f4cde33652ae3b693b0a0febe06cacd4cd0ce828f6c548372655acc5597b419d  ./skrip/build-github.sh
 6a4894eb161b621bd8cbfdd6e804c5cf3ab020f95bc767577dc08c44a078af6d  ./skrip/kita-cek.sh
 1c7ecc6179f52b247764f7a8e84ece7cf3750a27bd5dbcfc1e5e7c0cba62ccc1  ./templat/build-apk.yml
-880a9219dff35c6652727b78331931c07ad61f19635ae98ee3c4dc313ca37b70  ./templat/keystore.properties.example
