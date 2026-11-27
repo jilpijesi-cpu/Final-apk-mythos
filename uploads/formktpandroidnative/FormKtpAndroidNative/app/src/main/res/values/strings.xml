@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Form KTP Simulasi</string>
+    <string name="app_subtitle">Aplikasi Native Offline • 38 Provinsi</string>
+    <string name="disclaimer_preview">Pratinjau ini adalah draf simulasi formulir (rasio ISO/IEC 7810 ID-1) ber-watermark permanen untuk latihan validasi data, bukan dokumen kependudukan resmi.</string>
+</resources>
