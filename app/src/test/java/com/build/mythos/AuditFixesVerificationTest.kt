@@ -68,7 +68,7 @@ class AuditFixesVerificationTest {
         }
         val agent = Agent(
             llm = llm,
-            tools = ToolRegistry.default(hasBuilder = true),
+            tools = ToolRegistry.default(withBuild = true),
             sandbox = ProjectSandbox(root),
             approver = approver,
             ask = { "" },
@@ -112,7 +112,7 @@ class AuditFixesVerificationTest {
                 return BuildOutcome(true, "OK")
             }
         }
-        val agent = Agent(llm, ToolRegistry.default(hasBuilder = true), ProjectSandbox(root), approver, { "" }, builder)
+        val agent = Agent(llm, ToolRegistry.default(withBuild = true), ProjectSandbox(root), approver, { "" }, builder)
         agent.execute("build") {}
         assertFalse("Build tidak boleh dijalankan bila workflow berubah setelah disetujui", buildCalled)
     }
