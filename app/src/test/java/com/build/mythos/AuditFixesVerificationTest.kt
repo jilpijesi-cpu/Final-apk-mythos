@@ -76,7 +76,7 @@ class AuditFixesVerificationTest {
             cfg = AgentConfig()
         )
         val res = agent.execute("build") {}
-        assertTrue(res.ok)
+        assertTrue(res.success)
         assertTrue("GithubBuild wajib memakai force=true (F-01)", sawForce)
         assertTrue("Workflow lengkap tidak boleh terpotong di 1.500 karakter (F-08)", sawSummary.contains("TAIL_MARKER_FULL_WORKFLOW"))
         assertTrue("Digest SHA-256 harus ditampilkan (F-01/F-08)", sawSummary.contains(workflowSha256(workflowDigest(root))))
