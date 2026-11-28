@@ -8,3 +8,17 @@
 .DS_Store
 keystore.properties
 local.properties
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+.env
+.env.*
+.ssh/
+.aws/
+*.pfx
+*.ppk
+*.gpg
+*.netrc
+*.npmrc

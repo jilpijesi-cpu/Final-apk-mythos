@@ -67,8 +67,8 @@ class RepoSecretGuardTest {
         assertNotNull("app/build.gradle.kts wajib ditemukan", gradle)
         val text = gradle!!.readText()
         val wajib = listOf(
-            "**/*.p12", "**/*.jks", "**/*.keystore", "**/*.pem", "**/*.key", "**/*.pfx", "**/.env", "**/.env.*", "**/*.env",
-            "**/.ssh/**", "**/.aws/**", "**/id_rsa*", "**/id_ed25519*", "**/.netrc", "**/credentials.json",
+            "**/*.p12", "**/*.jks", "**/*.keystore", "**/*.pem", "**/*.key", "**/*.pfx", "**/*.ppk", "**/*.gpg", "**/.env", "**/.env.*", "**/*.env",
+            "**/.ssh/**", "**/.aws/**", "**/id_rsa*", "**/id_ed25519*", "**/.netrc", "**/.npmrc", "**/credentials.json",
             "**/service-account*.json", "keystore.properties", "local.properties"
         )
         for (pola in wajib) assertTrue("packSource harus mengecualikan $pola", text.contains("\"$pola\""))
@@ -81,7 +81,7 @@ class RepoSecretGuardTest {
         val f = repoFile(".gitignore")
         assertNotNull(".gitignore wajib ditemukan", f)
         val lines = f!!.readLines().map { it.trim() }
-        for (p in listOf("keystore.properties", "*.jks", "*.keystore", "*.p12", "*.pem", "*.key", ".env", ".env.*", ".ssh/", ".aws/")) {
+        for (p in listOf("keystore.properties", "*.jks", "*.keystore", "*.p12", "*.pem", "*.key", ".env", ".env.*", ".ssh/", ".aws/", "*.pfx", "*.ppk", "*.gpg", "*.netrc", "*.npmrc")) {
             assertTrue(".gitignore harus memuat $p", p in lines)
         }
     }
