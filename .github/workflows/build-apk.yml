@@ -31,7 +31,7 @@ jobs:
 
       # F-18: pastikan wrapper dan skrip build memiliki bit executable setelah checkout.
       - name: Pastikan izin executable wrapper dan skrip
-        run: chmod +x gradlew build.sh build-termux.sh tools/*.sh
+        run: chmod +x gradlew tools/*.sh
 
       - name: Verifikasi SHA256SUMS berangkas
         run: cd app/src/main/assets/berangkas && sha256sum -c SHA256SUMS
