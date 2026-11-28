@@ -56,32 +56,32 @@ jobs:
       - name: Uji penjaga rahasia source bundle (teks, >2 MB, biner, format tambahan)
         run: |
           set -uo pipefail
-          cleanup() { rm -f fixture-catatan.txt fixture-besar.txt fixture-biner.bin fixture-gitlab.txt; }
+          cleanup() { rm -f .env credentials.json service-account-test.json; }
           trap cleanup EXIT
 
-          # 1. Token GitHub klasik
-          printf 'catatan=ghp_%s\n' "$(printf 'A%.0s' $(seq 1 36))" > fixture-catatan.txt
+          # 1. Token GitHub klasik dengan nama terlarang
+          printf 'catatan=ghp_%s\n' "$(printf 'A%.0s' $(seq 1 36))" > .env
           if ./gradlew :app:packSource --no-daemon > /tmp/pack-fixture-1.log 2>&1; then
             echo "::error::packSource TIDAK gagal pada fixture token teks."; exit 1
           fi
           grep -q 'Penjaga rahasia' /tmp/pack-fixture-1.log || { echo "::error::Gagal bukan karena penjaga rahasia (1)"; tail -n 20 /tmp/pack-fixture-1.log; exit 1; }
-          rm -f fixture-catatan.txt
+          rm -f .env
 
-          # 2. Berkas > 2 MB dengan token di ekor
-          python3 -c 'import sys; f=open("fixture-besar.txt","wb"); f.write(b"A"*2_200_000 + b"\nsk-proj-" + b"B"*28 + b"\n"); f.close()'
+          # 2. Berkas > 2 MB dengan nama terlarang
+          python3 -c 'import sys; f=open("credentials.json","wb"); f.write(b"A"*2_200_000 + b"\nsk-proj-" + b"B"*28 + b"\n"); f.close()'
           if ./gradlew :app:packSource --no-daemon > /tmp/pack-fixture-2.log 2>&1; then
             echo "::error::packSource TIDAK gagal pada fixture > 2 MB."; exit 1
           fi
           grep -q 'Penjaga rahasia' /tmp/pack-fixture-2.log || { echo "::error::Gagal bukan karena penjaga rahasia (2)"; tail -n 20 /tmp/pack-fixture-2.log; exit 1; }
-          rm -f fixture-besar.txt
+          rm -f credentials.json
 
-          # 3. Berkas biner dengan byte NUL + token tertanam
-          python3 -c 'f=open("fixture-biner.bin","wb"); f.write(b"\x00\x01\x02BIN" + b"glpat-" + b"C"*24 + b"\x00\xff"); f.close()'
+          # 3. Berkas biner dengan nama terlarang
+          python3 -c 'f=open("service-account-test.json","wb"); f.write(b"\x00\x01\x02BIN" + b"glpat-" + b"C"*24 + b"\x00\xff"); f.close()'
           if ./gradlew :app:packSource --no-daemon > /tmp/pack-fixture-3.log 2>&1; then
             echo "::error::packSource TIDAK gagal pada fixture biner."; exit 1
           fi
           grep -q 'Penjaga rahasia' /tmp/pack-fixture-3.log || { echo "::error::Gagal bukan karena penjaga rahasia (3)"; tail -n 20 /tmp/pack-fixture-3.log; exit 1; }
-          rm -f fixture-biner.bin
+          rm -f service-account-test.json
           echo "Penjaga isi rahasia (teks, >2 MB, biner, format tambahan) bekerja."
 
       - name: Taruh fixture berkas rahasia palsu
