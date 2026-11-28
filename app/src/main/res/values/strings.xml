@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">HaloKalkulator</string>
+    <string name="num1_hint">Angka pertama</string>
+    <string name="num2_hint">Angka kedua</string>
+    <string name="calculate">Jumlahkan</string>
+    <string name="result">Hasil: </string>
+</resources>
