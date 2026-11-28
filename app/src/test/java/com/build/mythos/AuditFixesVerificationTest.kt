@@ -129,7 +129,7 @@ class AuditFixesVerificationTest {
         }
         val agent = Agent(
             llm = llm,
-            tools = ToolRegistry.default(hasBuilder = false),
+            tools = ToolRegistry.default(withBuild = false),
             sandbox = ProjectSandbox(root),
             approver = Approver { _, _ -> true },
             ask = { "" },
@@ -171,7 +171,7 @@ class AuditFixesVerificationTest {
         }
         val agent = Agent(
             llm = llm,
-            tools = ToolRegistry.default(hasBuilder = false),
+            tools = ToolRegistry.default(withBuild = false),
             sandbox = ProjectSandbox(root),
             approver = Approver { _, _ -> true },
             ask = { "" },
