@@ -1,0 +1,22 @@
+# Hasil build dan cache
+build/
+app/build/
+.gradle/
+.idea/
+.DS_Store
+*.apk
+*.aab
+
+# Rahasia: JANGAN di-commit
+keystore.properties
+local.properties
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+.env
+.env.*
+.ssh/
+.aws/

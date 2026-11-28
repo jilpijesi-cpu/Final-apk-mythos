@@ -1,0 +1,252 @@
+# Dipicu oleh push, pull request, dan workflow_dispatch.
+# F-02: Build dan tes berjalan TANPA secret signing. Penandatanganan dipisah ke job terlindungi (sign-and-release)
+# yang hanya menerima artefak APK terverifikasi, berjalan di protected ref / workflow_dispatch dengan environment approval,
+# dan mewajibkan KEYSTORE_SHA256 untuk semua alias (F-16).
+name: Build APK
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  # Job 1: Build tak bertanda tangan + tes unit + compile androidTest + lint wajib + validasi release (TANPA secret)
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Validasi Gradle Wrapper
+        uses: gradle/actions/wrapper-validation@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
+
+      # F-18: pastikan wrapper dan skrip build memiliki bit executable setelah checkout.
+      - name: Pastikan izin executable wrapper dan skrip
+        run: chmod +x gradlew build.sh build-termux.sh tools/*.sh
+
+      - name: Verifikasi SHA256SUMS berangkas
+        run: cd app/src/main/assets/berangkas && sha256sum -c SHA256SUMS
+
+      - name: Siapkan JDK 17
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Siapkan Android SDK
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3.2.2
+        with:
+          packages: 'platforms;android-34 build-tools;34.0.0 platform-tools'
+
+      - name: Siapkan Gradle 8.9
+        uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
+        with:
+          gradle-version: '8.9'
+
+      # F-10: Uji regresi penjaga rahasia untuk (1) teks token standar, (2) berkas > 2 MB, (3) berkas biner, (4) format token tambahan.
+      - name: Uji penjaga rahasia source bundle (teks, >2 MB, biner, format tambahan)
+        run: |
+          set -uo pipefail
+          cleanup() { rm -f fixture-catatan.txt fixture-besar.txt fixture-biner.bin fixture-gitlab.txt; }
+          trap cleanup EXIT
+
+          # 1. Token GitHub klasik
+          printf 'catatan=ghp_%s\n' "$(printf 'A%.0s' $(seq 1 36))" > fixture-catatan.txt
+          if ./gradlew :app:packSource --no-daemon > /tmp/pack-fixture-1.log 2>&1; then
+            echo "::error::packSource TIDAK gagal pada fixture token teks."; exit 1
+          fi
+          grep -q 'Penjaga rahasia' /tmp/pack-fixture-1.log || { echo "::error::Gagal bukan karena penjaga rahasia (1)"; tail -n 20 /tmp/pack-fixture-1.log; exit 1; }
+          rm -f fixture-catatan.txt
+
+          # 2. Berkas > 2 MB dengan token di ekor
+          python3 -c 'import sys; f=open("fixture-besar.txt","wb"); f.write(b"A"*2_200_000 + b"\nsk-proj-" + b"B"*28 + b"\n"); f.close()'
+          if ./gradlew :app:packSource --no-daemon > /tmp/pack-fixture-2.log 2>&1; then
+            echo "::error::packSource TIDAK gagal pada fixture > 2 MB."; exit 1
+          fi
+          grep -q 'Penjaga rahasia' /tmp/pack-fixture-2.log || { echo "::error::Gagal bukan karena penjaga rahasia (2)"; tail -n 20 /tmp/pack-fixture-2.log; exit 1; }
+          rm -f fixture-besar.txt
+
+          # 3. Berkas biner dengan byte NUL + token tertanam
+          python3 -c 'f=open("fixture-biner.bin","wb"); f.write(b"\x00\x01\x02BIN" + b"glpat-" + b"C"*24 + b"\x00\xff"); f.close()'
+          if ./gradlew :app:packSource --no-daemon > /tmp/pack-fixture-3.log 2>&1; then
+            echo "::error::packSource TIDAK gagal pada fixture biner."; exit 1
+          fi
+          grep -q 'Penjaga rahasia' /tmp/pack-fixture-3.log || { echo "::error::Gagal bukan karena penjaga rahasia (3)"; tail -n 20 /tmp/pack-fixture-3.log; exit 1; }
+          rm -f fixture-biner.bin
+          echo "Penjaga isi rahasia (teks, >2 MB, biner, format tambahan) bekerja."
+
+      - name: Taruh fixture berkas rahasia palsu
+        run: |
+          set -euo pipefail
+          mkdir -p .ssh
+          for f in .env fixture-signing.p12 id_rsa service-account.json deploy.pem .ssh/config; do
+            printf 'MYTHOS_FIXTURE_%s\n' NAME_ONLY > "$f"
+          done
+
+      # F-02 & F-15: bangun variant debug DAN release (minify + resource shrink) TANPA secret signing.
+      - name: Build APK debug dan release (tak bertanda tangan)
+        run: ./gradlew assembleDebug assembleRelease -PallowUnsigned=true --no-daemon
+
+      - name: Pastikan APK debug dan release membawa source bersih
+        run: |
+          set -euo pipefail
+          for APK in app/build/outputs/apk/debug/*.apk app/build/outputs/apk/release/*.apk; do
+            echo "Memeriksa $APK ..."
+            unzip -l "$APK" | grep -q 'assets/mythos-source.zip' || { echo "::error::$APK tidak membawa assets/mythos-source.zip"; exit 1; }
+            bash tools/cek-source-bundle.sh "$APK"
+          done
+
+      - name: Hapus fixture rahasia
+        if: always()
+        run: rm -rf fixture-catatan.txt fixture-besar.txt fixture-biner.bin .env fixture-signing.p12 id_rsa service-account.json deploy.pem .ssh
+
+      - name: Jalankan tes unit JVM
+        run: ./gradlew testDebugUnitTest --no-daemon
+
+      # F-22: kompilasi tes instrumentasi UI/persetujuan agar regresi kompilasi terdeteksi di CI.
+      - name: Kompilasi tes instrumentasi (androidTest)
+        run: ./gradlew assembleDebugAndroidTest -PallowUnsigned=true --no-daemon
+
+      # F-19: lint menjadi quality gate wajib (tanpa continue-on-error).
+      - name: Jalankan lint (wajib lulus)
+        run: ./gradlew lintDebug --no-daemon
+
+      - name: Unggah APK tak bertanda tangan (untuk job signing / PR)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: mythos-unsigned-apks
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/release/*.apk
+
+      - name: Unggah laporan tes
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: laporan-tes-unit
+          path: app/build/reports/tests/testDebugUnitTest/
+          if-no-files-found: ignore
+
+      - name: Unggah laporan lint
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: laporan-lint
+          path: app/build/reports/lint-results-debug.html
+          if-no-files-found: ignore
+
+  # Job 2 (F-02, F-15, F-16): Penandatanganan terisolasi — TIDAK menjalankan Gradle/kode sumber tak tepercaya.
+  # Hanya berjalan pada branch utama/tag rilis terlindungi atau workflow_dispatch manual, dengan Environment approval.
+  sign-and-release:
+    needs: build-and-test
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')))
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: release-signing
+    permissions:
+      contents: read
+    steps:
+      - name: Siapkan JDK 17
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Siapkan Android build-tools (apksigner & zipalign)
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3.2.2
+        with:
+          packages: 'build-tools;34.0.0'
+
+      - name: Unduh artefak APK terverifikasi dari build-and-test
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: mythos-unsigned-apks
+          path: unsigned-apks
+
+      - name: Verifikasi keystore (wajib KEYSTORE_SHA256) dan tandatangani APK
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS_SECRET: ${{ secrets.KEY_ALIAS }}
+          EXPECTED_SHA256_SECRET: ${{ secrets.KEYSTORE_SHA256 }}
+        run: |
+          set -euo pipefail
+          if [ -z "${KEYSTORE_B64:-}" ] || [ -z "${KEYSTORE_PASSWORD:-}" ]; then
+            echo "::error::GitHub Secrets KEYSTORE_B64 dan/atau KEYSTORE_PASSWORD belum tersedia."
+            exit 1
+          fi
+          # F-16: fingerprint SHA-256 WAJIB disetel dan diverifikasi untuk SEMUA alias (termasuk keystore kustom).
+          if [ -z "${EXPECTED_SHA256_SECRET:-}" ]; then
+            echo "::error::GitHub Secret KEYSTORE_SHA256 wajib disetel untuk memverifikasi sertifikat penandatangan."
+            exit 1
+          fi
+
+          SIGN_DIR="$(mktemp -d)"
+          trap 'rm -rf "$SIGN_DIR"' EXIT
+          KEYSTORE_FILE="$SIGN_DIR/signing-key.p12"
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$KEYSTORE_FILE"
+          test -s "$KEYSTORE_FILE"
+          chmod 600 "$KEYSTORE_FILE"
+
+          if [ -n "${KEY_ALIAS_SECRET:-}" ]; then
+            KEY_ALIAS="$KEY_ALIAS_SECRET"
+          elif keytool -list -keystore "$KEYSTORE_FILE" -storepass:env KEYSTORE_PASSWORD -alias "androiddebugkey" >/dev/null 2>&1; then
+            KEY_ALIAS="androiddebugkey"
+          elif keytool -list -keystore "$KEYSTORE_FILE" -storepass:env KEYSTORE_PASSWORD -alias "kita" >/dev/null 2>&1; then
+            KEY_ALIAS="kita"
+          else
+            echo "::error::Alias keystore tidak ditemukan; setel secret KEY_ALIAS secara eksplisit."
+            exit 1
+          fi
+
+          ACTUAL_SHA256="$(keytool -list -v -keystore "$KEYSTORE_FILE" -storepass:env KEYSTORE_PASSWORD -alias "$KEY_ALIAS" 2>/dev/null | awk -F': ' '/SHA256:/{print $2; exit}')"
+          if [ -z "$ACTUAL_SHA256" ] || [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256_SECRET" ]; then
+            echo "::error::Fingerprint sertifikat untuk alias '$KEY_ALIAS' tidak cocok dengan secret KEYSTORE_SHA256."
+            exit 1
+          fi
+
+          BT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}/build-tools/34.0.0"
+          mkdir -p signed-debug signed-release
+
+          sign_one() {
+            local in_apk="$1"
+            local out_apk="$2"
+            local aligned="$SIGN_DIR/$(basename "$out_apk").aligned.apk"
+            "$BT/zipalign" -f -p 4 "$in_apk" "$aligned"
+            "$BT/apksigner" sign \
+              --ks "$KEYSTORE_FILE" \
+              --ks-key-alias "$KEY_ALIAS" \
+              --ks-pass env:KEYSTORE_PASSWORD \
+              --key-pass env:KEYSTORE_PASSWORD \
+              --out "$out_apk" \
+              "$aligned"
+            "$BT/apksigner" verify --verbose --print-certs "$out_apk"
+          }
+
+          DEBUG_IN="$(ls unsigned-apks/debug/*.apk | head -1)"
+          RELEASE_IN="$(ls unsigned-apks/release/*.apk | head -1)"
+          sign_one "$DEBUG_IN" "signed-debug/app-debug.apk"
+          sign_one "$RELEASE_IN" "signed-release/app-release.apk"
+
+      - name: Unggah APK debug bertanda tangan
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: mythos-debug
+          path: signed-debug/*.apk
+
+      - name: Unggah APK release bertanda tangan
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: mythos-release
+          path: signed-release/*.apk

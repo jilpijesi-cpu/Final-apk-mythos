@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MYTHOS</string>
+    <string name="cd_attach">Tambah lampiran atau templat</string>
+    <string name="cd_deep_off">Matikan penalaran mendalam</string>
+    <string name="cd_mic">Input suara</string>
+    <string name="cd_send">Kirim pesan</string>
+    <string name="cd_stop">Hentikan</string>
+    <string name="cd_scroll_down">Gulir ke bawah</string>
+    <string name="cd_copy_code">Salin kode</string>
+    <string name="cd_code_copied">Kode tersalin</string>
+    <string name="cd_copy_reply">Salin balasan</string>
+    <string name="cd_share_reply">Bagikan balasan</string>
+    <string name="cd_play_reply">Bacakan balasan</string>
+    <string name="cd_like_reply">Balasan bagus</string>
+    <string name="cd_dislike_reply">Balasan kurang baik</string>
+    <string name="cd_retry_reply">Ulangi jawaban</string>
+    <string name="a11y_expand">Perluas</string>
+    <string name="a11y_collapse">Ciutkan</string>
+    <string name="a11y_state_open">Terbuka</string>
+    <string name="a11y_state_closed">Tertutup</string>
+</resources>
